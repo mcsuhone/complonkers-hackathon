@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.complonkers-hackathon/slide_layout"
+           xmlns="http://www.complonkers-hackathon/slide_layout"
+           elementFormDefault="qualified">
+
+  <!-- Root element for a slide deck -->
+  <xs:element name="SlideDeck" type="SlideDeckType"/>
+
+  <!-- A deck contains multiple slides -->
+  <xs:complexType name="SlideDeckType">
+    <xs:sequence>
+      <xs:element name="Slide" type="SlideType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Definition of a single slide -->
+  <xs:complexType name="SlideType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Text" type="TextType"/>
+        <xs:element name="Image" type="ImageType"/>
+        <xs:element name="Chart" type="ChartType"/>
+        <xs:element name="List" type="ListType"/>
+        <xs:element name="Container" type="ContainerType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="classes" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Base component with shared attributes -->
+  <xs:complexType name="BaseComponentType">
+    <xs:attribute name="id" type="xs:string" use="optional"/>
+    <xs:attribute name="placeholder" type="xs:string" use="optional"/>
+    <xs:attribute name="classes" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Text element with tag type (e.g., h1, p) -->
+  <xs:simpleType name="TextTagType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="h1"/>
+      <xs:enumeration value="h2"/>
+      <xs:enumeration value="h3"/>
+      <xs:enumeration value="p"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="TextType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:attribute name="tag" type="TextTagType" use="optional" default="p"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Image element for placeholders; actual src/alt filled by content agent -->
+  <xs:complexType name="ImageType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:attribute name="alt" type="xs:string" use="optional"/>
+        <xs:attribute name="width" type="xs:string" use="optional"/>
+        <xs:attribute name="height" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Chart element with optional type hint -->
+  <xs:simpleType name="ChartKindType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="bar"/>
+      <xs:enumeration value="line"/>
+      <xs:enumeration value="pie"/>
+      <xs:enumeration value="scatter"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ChartType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:attribute name="type" type="ChartKindType" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- List element with ordered/unordered flag -->
+  <xs:complexType name="ListType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Generic container to group other components -->
+  <xs:complexType name="ContainerType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Text" type="TextType"/>
+            <xs:element name="Image" type="ImageType"/>
+            <xs:element name="Chart" type="ChartType"/>
+            <xs:element name="List" type="ListType"/>
+            <xs:element name="Container" type="ContainerType"/>
+          </xs:choice>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+</xs:schema>

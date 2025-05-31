@@ -13,5 +13,4 @@ COPY . .
 # Expose Vite dev server port
 EXPOSE 5173
 
-# THIRD_EDIT: Start Vite dev server using pnpm
-CMD ["pnpm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["pnpm", "run", "dev", "--", "--host", "localhost:5173"]
