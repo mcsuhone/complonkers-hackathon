@@ -95,7 +95,12 @@
     </xs:complexContent>
   </xs:complexType>
 
-  <!-- Chart element with optional type hint and chart ID reference -->
+  <!-- Chart element for embedding D3.js-compatible charts -->
+  <xs:annotation>
+    <xs:documentation>
+      Chart element for embedding D3.js-compatible charts. Use 'chartComponentId' to reference predefined definitions or inline 'ChartDefinition' element for bespoke D3.js configurations. Refer to D3.js XML chart definitions for details.
+    </xs:documentation>
+  </xs:annotation>
   <xs:simpleType name="ChartKindType">
     <xs:restriction base="xs:string">
       <xs:enumeration value="bar"/>
@@ -114,11 +119,24 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- ChartType: D3.js XML Chart Usage -->
+  <xs:annotation>
+    <xs:documentation>
+      Chart element for embedding D3.js-compatible charts. Use 'chartComponentId' to reference predefined definitions or include an inline 'ChartDefinition' child for full configuration. Align XML to the chart component schema for data, styling, and interactions.
+    </xs:documentation>
+  </xs:annotation>
   <xs:complexType name="ChartType">
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:sequence>
           <xs:element name="Content" type="xs:string"/>
+          <xs:element ref="ChartDefinition" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>
+                Inline ChartDefinition specifying full chart config, data mapping, styling, and interactions for D3.js rendering.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
         </xs:sequence>
         <xs:attribute name="mode" use="required">
           <xs:simpleType>
@@ -172,5 +190,86 @@
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
+
+  <!-- inlined chart definitions start -->
+  <!-- Chart definitions from chart_component_schema.xsd -->
+  <xs:element name="ChartDefinition" type="ChartDefinitionType">
+    <xs:annotation>
+      <xs:documentation>
+        Chart definitions are stored in a registry/store and referenced by ID from slide layouts. The slide layout uses chartComponentId or inline ChartDefinition elements.
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="ChartDefinitionType">
+    <xs:sequence>
+      <xs:element name="ChartConfig" type="ChartConfigType"/>
+      <xs:element name="Data" type="DataType"/>
+      <xs:element name="Styling" type="StylingType" minOccurs="0"/>
+      <xs:element name="Interactions" type="InteractionsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Unique identifier for this chart definition, referenced by slides.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+  <!-- Chart configuration -->
+  <xs:complexType name="ChartConfigType">
+    <xs:sequence>
+      <xs:element name="Dimensions" type="DimensionsType"/>
+      <xs:element name="Margins" type="MarginsType" minOccurs="0"/>
+      <xs:element name="Axes" type="AxesType" minOccurs="0"/>
+      <xs:element name="Legend" type="LegendType" minOccurs="0"/>
+      <xs:element name="Projection" type="ProjectionType" minOccurs="0"/>
+      <xs:element name="Hierarchy" type="HierarchyType" minOccurs="0"/>
+      <xs:element name="Force" type="ForceType" minOccurs="0"/>
+      <xs:element name="Transition" type="TransitionType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="type" type="ChartTypeEnum" use="required"/>
+    <xs:attribute name="title" type="xs:string" use="optional"/>
+    <xs:attribute name="subtitle" type="xs:string" use="optional"/>
+    <xs:attribute name="theme" type="xs:string" use="optional" default="default"/>
+  </xs:complexType>
+  <!-- Chart types enumeration -->
+  <xs:simpleType name="ChartTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="bar"/>
+      <xs:enumeration value="line"/>
+      <xs:enumeration value="area"/>
+      <xs:enumeration value="pie"/>
+      <xs:enumeration value="donut"/>
+      <xs:enumeration value="scatter"/>
+      <xs:enumeration value="bubble"/>
+      <xs:enumeration value="histogram"/>
+      <xs:enumeration value="heatmap"/>
+      <xs:enumeration value="treemap"/>
+      <xs:enumeration value="sunburst"/>
+      <xs:enumeration value="sankey"/>
+      <xs:enumeration value="chord"/>
+      <xs:enumeration value="force"/>
+      <xs:enumeration value="network"/>
+      <xs:enumeration value="tree"/>
+      <xs:enumeration value="cluster"/>
+      <xs:enumeration value="pack"/>
+      <xs:enumeration value="partition"/>
+      <xs:enumeration value="map"/>
+      <xs:enumeration value="choropleth"/>
+      <xs:enumeration value="contour"/>
+      <xs:enumeration value="density"/>
+      <xs:enumeration value="violin"/>
+      <xs:enumeration value="boxplot"/>
+      <xs:enumeration value="candlestick"/>
+      <xs:enumeration value="radar"/>
+      <xs:enumeration value="parallel"/>
+      <xs:enumeration value="streamgraph"/>
+      <xs:enumeration value="ridgeline"/>
+      <xs:enumeration value="calendar"/>
+      <xs:enumeration value="matrix"/>
+      <xs:enumeration value="arc"/>
+      <xs:enumeration value="ribbon"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- ... Additional chart definitions (DimensionsType, MarginsType, AxesType, AxisType, ScaleTypeEnum, LegendType, LegendPositionEnum, OrientationEnum, DataType, DataSourceType, DataSourceTypeEnum, DataMappingType, FieldType, FieldRoleEnum, DataTypeEnum, StylingType, ColorsType, ColorSchemeEnum, FontsType, AnimationType, EasingEnum, InteractionsType, TooltipType, ZoomType, BrushType, BrushAxisEnum, ProjectionType, ProjectionTypeEnum, HierarchyType, TileTypeEnum, ForceType, ForcesType, CenterForceType, CollideForceType, LinkForceType, ManyBodyForceType, PositionForceType, RadialForceType, TransitionType, PanType, DragType, ClickType, HoverType, SelectionType, SelectionModeEnum) should be pasted here in full. -->
+  <!-- inlined chart definitions end -->
 
 </xs:schema>

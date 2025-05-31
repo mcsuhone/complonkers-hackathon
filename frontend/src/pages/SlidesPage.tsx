@@ -125,7 +125,7 @@ export const SlidesPage: React.FC = () => {
 
         {/* Slide Content */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full h-full max-w-7xl">
+          <div className="w-full h-full max-w-7xl border rounded-lg overflow-hidden bg-white">
             {currentSlide && (
               <SlideRenderer xml={currentSlide.xml} className="w-full h-full" />
             )}
@@ -234,7 +234,7 @@ export const SlidesPage: React.FC = () => {
                     onClick={() => setCurrentSlideIndex(index)}
                   >
                     <CardContent className="p-3">
-                      <div className="aspect-video bg-muted rounded mb-2 overflow-hidden">
+                      <div className="aspect-video bg-white rounded mb-2 overflow-hidden">
                         <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
                           <SlideRenderer
                             xml={slide.xml}

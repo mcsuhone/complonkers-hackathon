@@ -3,6 +3,7 @@ import { D3ChartRenderer } from "./D3Charts";
 import { chartsService, textComponentsService } from "@/db";
 import { templateData } from "@/data/presentationTemplate";
 import type { Chart, TextComponent } from "@/db";
+import { cn } from "@/lib/utils";
 
 interface SlideRendererProps {
   /** XML string representing the slide content */
@@ -56,40 +57,51 @@ const renderComponent = (
   const id = element.getAttribute("id") || Math.random().toString();
 
   switch (tagName) {
+    case "Title": {
+      const content = element.textContent?.trim() || "";
+      return (
+        <h1 key={id} className={cn("text-gray-900", classes)}>
+          {content}
+        </h1>
+      );
+    }
     case "Text": {
       const tag = element.getAttribute("tag") || "p";
-      const textId = element.getAttribute("textId");
-
-      // Get text content from text component if textId is provided
-      let content = placeholder;
-      if (textId && textComponents[textId]) {
-        content =
-          parseTextComponentXML(textComponents[textId].xml) || placeholder;
+      const contentElem = element.querySelector("Content");
+      let content = contentElem?.textContent?.trim() || placeholder;
+      if (!content) {
+        const textComponentId =
+          element.getAttribute("textComponentId") ||
+          element.getAttribute("textId");
+        if (textComponentId && textComponents[textComponentId]) {
+          content =
+            parseTextComponentXML(textComponents[textComponentId].xml) ||
+            content;
+        }
       }
-
       // Create the appropriate HTML element based on tag
       switch (tag) {
         case "h1":
           return (
-            <h1 key={id} className={classes}>
+            <h1 key={id} className={cn("text-gray-900", classes)}>
               {content}
             </h1>
           );
         case "h2":
           return (
-            <h2 key={id} className={classes}>
+            <h2 key={id} className={cn("text-gray-900", classes)}>
               {content}
             </h2>
           );
         case "h3":
           return (
-            <h3 key={id} className={classes}>
+            <h3 key={id} className={cn("text-gray-900", classes)}>
               {content}
             </h3>
           );
         default:
           return (
-            <p key={id} className={classes}>
+            <p key={id} className={cn("text-gray-900", classes)}>
               {content}
             </p>
           );
@@ -114,16 +126,19 @@ const renderComponent = (
     }
 
     case "Chart": {
-      const chartId = element.getAttribute("chartId");
+      const chartComponentId =
+        element.getAttribute("chartComponentId") ||
+        element.getAttribute("chartId") ||
+        element.getAttribute("id");
       const type = element.getAttribute("type") || "bar";
 
-      if (chartId && charts[chartId]) {
+      if (chartComponentId && charts[chartComponentId]) {
         // Extract dataId from chart XML
-        const chartXmlDoc = parseLayoutXML(charts[chartId].xml);
+        const chartXmlDoc = parseLayoutXML(charts[chartComponentId].xml);
         const dataSource = chartXmlDoc?.querySelector("DataSource");
         const dataId = dataSource?.getAttribute("dataId");
 
-        console.log(`Chart ${chartId}: dataId=${dataId}`);
+        console.log(`Chart ${chartComponentId}: dataId=${dataId}`);
 
         // Get data from templateData and ensure it's an array
         const rawData = dataId
@@ -142,19 +157,20 @@ const renderComponent = (
           chartData = rawData as any;
         }
 
-        console.log(`Chart ${chartId}: chartData=`, chartData);
+        console.log(`Chart ${chartComponentId}: chartData=`, chartData);
 
         return (
           <D3ChartRenderer
             key={id}
-            chartXml={charts[chartId].xml}
+            chartXml={charts[chartComponentId].xml}
             data={chartData}
             className={classes}
           />
         );
       }
 
-      // Fallback for charts without chartId
+      const contentElem = element.querySelector("Content");
+      const fallbackText = contentElem?.textContent?.trim() || placeholder;
       return (
         <div
           key={id}
@@ -163,7 +179,7 @@ const renderComponent = (
           <div className="text-center">
             <div className="text-4xl mb-2">📊</div>
             <div className="text-sm text-gray-600">{type} Chart</div>
-            <div className="text-xs text-gray-500">{placeholder}</div>
+            <div className="text-xs text-gray-500">{fallbackText}</div>
           </div>
         </div>
       );
@@ -175,7 +191,7 @@ const renderComponent = (
 
       const ListComponent = ordered ? "ol" : "ul";
       return (
-        <ListComponent key={id} className={classes}>
+        <ListComponent key={id} className={cn("text-gray-900", classes)}>
           {items.map((item, index) => (
             <li key={index}>
               {item.replace(/^[•\-\*]\s*/, "").replace(/^\d+\.\s*/, "")}
@@ -205,7 +221,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   xml,
   className = "",
 }) => {
-  // console.log("Debug: SlideRenderer xml:", xml);
+  console.log("Debug: SlideRenderer xml:", xml);
 
   // Ensure hooks are always called before any early returns
   const [textComponents, setTextComponents] = React.useState<
