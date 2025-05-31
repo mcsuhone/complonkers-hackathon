@@ -139,9 +139,46 @@ def get_data_analyst_instructions():
     -   The 'id' attributes for slides and components should be meaningful (e.g., derived from 'SlideId' or descriptive of content).
     -   The 'Content' element within each 'Chart' or 'Text' component in your generated 'slide_schema.xml' MUST be a descriptive placeholder for the data. This placeholder will guide the `script_agent` in fetching and injecting the actual data.
         Example for a Chart:
-        <Chart type="pie" id="salesDistributionChart" classes="">
-        <Content>Pie chart showing sales distribution by product category for the last quarter. Requires: product category, total sales amount per category.</Content>
-        </Chart>
+        <Chart mode="content" type="bar" classes="w-full h-96">
+        <Content>Quarterly revenue breakdown chart showing growth trend</Content>
+        <ChartDefinition id="revenue-chart">
+          <ChartConfig type="bar" title="Quarterly Revenue Growth" theme="corporate">
+            <Dimensions width="500" height="400"/>
+            <Margins top="20" right="30" bottom="40" left="50"/>
+            <Axes>
+              <XAxis field="quarter" title="Quarter"/>
+              <YAxis field="revenue" title="Revenue ($M)" format="currency"/>
+            </Axes>
+            <Legend position="top-right" orientation="vertical"/>
+          </ChartConfig>
+          <Data>
+            <DataSource type="inline" source="quarterly-revenue">
+              <Field name="quarter" type="string"/>
+              <Field name="revenue" type="number"/>
+            </DataSource>
+            <DataMapping field="quarter" role="dimension" dataType="string">
+              <Mapping>Q1 2024</Mapping>
+              <Mapping>Q2 2024</Mapping>
+              <Mapping>Q3 2024</Mapping>
+              <Mapping>Q4 2024</Mapping>
+            </DataMapping>
+            <DataMapping field="revenue" role="measure" dataType="decimal">
+              <Mapping>1.8</Mapping>
+              <Mapping>2.1</Mapping>
+              <Mapping>2.2</Mapping>
+              <Mapping>2.4</Mapping>
+            </DataMapping>
+          </Data>
+          <Styling>
+            <ColorScheme>["#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"]</ColorScheme>
+            <BarStyle cornerRadius="4" strokeWidth="1"/>
+          </Styling>
+          <Interactions>
+            <Tooltip enabled="true" format="Revenue: ${value}M"/>
+            <Hover highlight="true"/>
+          </Interactions>
+        </ChartDefinition>
+      </Chart>
 
         Example for Text:
         <Text tag="h2" id="totalRevenueText" classes="text-xl font-bold">
