@@ -1,6 +1,5 @@
 import json
 import logging
-from redis_utils.redis_stream import publish_message
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.genai import types as genai_types
@@ -15,7 +14,7 @@ async def run_ai_agent(
     app_name: str,
 ):
     """
-    Generic wrapper to run a Google ADK agent, then publish the agent.output_key result to Redis stream.
+    Generic wrapper to run a Google ADK agent and return the result.
     """
     USER_ID = subject_id
     SESSION_ID = subject_id
@@ -50,10 +49,4 @@ async def run_ai_agent(
         return None
 
     result = final_session.state.get(agent.output_key)
-    try:
-        payload = json.dumps(result)
-    except (TypeError, ValueError):
-        payload = str(result)
-
-    await publish_message(subject_id, payload)
     return result

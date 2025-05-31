@@ -7,8 +7,7 @@ from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 
 from redis_utils.redis_stream import publish_message, listen_stream
-from app.agents.interpreter.agent import job_interpreter_agent
-from agent_utils.run_ai_agent import run_ai_agent
+from run_multiagent_workflow import run_multiagent_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -31,20 +30,12 @@ async def create_job(request: JobCreateRequest, background_tasks: BackgroundTask
     """
     print(f"request={request}")
     job_id = str(uuid.uuid4())
-    # Kick off AI agent in background
-    initial_state = {"prompt": request.prompt, "audiences": request.audiences}
-    message_parts = [
-        "Interpret the job request",
-        f"Prompt: {request.prompt}",
-        f"Audiences: {request.audiences}"
-    ]
+    # Kick off multi-agent workflow in background using only request data
     background_tasks.add_task(
-        run_ai_agent,
-        job_interpreter_agent,
-        subject_id=job_id,
-        initial_state=initial_state,
-        message_parts=message_parts,
-        app_name="job_interpreter_app"
+        run_multiagent_workflow,
+        job_id,
+        request.prompt,
+        request.audiences
     )
     return {"jobId": job_id}
 
