@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def safe_json_dumps(obj):
     try:
         return json.dumps(obj)
-    except (TypeError, ValueError):
+    except Exception as e:
         print('Error serializing object to JSON:', obj)
         return str(obj)
 
@@ -93,8 +93,9 @@ async def run_agent_workflow(
         return None
 
     # Publish architect output
-    print(f"Architect result: {architect_result}")
-    arch_payload = safe_json_dumps(architect_result)
-    await publish_message(subject_id, arch_payload)
+    print(f"Architect result: {architect_result}")  # xml string
+    await publish_message(subject_id, architect_result)
+    
+    
 
     return architect_result
