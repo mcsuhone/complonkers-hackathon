@@ -40,4 +40,13 @@ export const layoutsService = {
   clear: async (): Promise<void> => {
     await db.layouts.clear();
   },
+
+  // Get layout by associated slideId
+  getBySlideId: async (slideId: string): Promise<Layout | undefined> => {
+    // Use filter since slideId may not be indexed
+    const layouts = await db.layouts
+      .filter((l) => l.slideId === slideId)
+      .toArray();
+    return layouts.length > 0 ? layouts[0] : undefined;
+  },
 };

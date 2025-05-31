@@ -66,7 +66,6 @@ export function useJobEvents(jobId: string) {
           const newSlides = slideIdeaElems.map((el, idx) => ({
             presentationId: jobId,
             index: idx,
-            layoutId: "",
             slideId: el.querySelector("SlideId")?.textContent || "",
             title: el.querySelector("Title")?.textContent || "",
             contentDescription:

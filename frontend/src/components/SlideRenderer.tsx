@@ -5,7 +5,7 @@ import { templateData } from "@/data/presentationTemplate";
 import type { Layout, Chart, TextComponent } from "@/db";
 
 interface SlideRendererProps {
-  layoutId: string;
+  slideId: string;
   className?: string;
 }
 
@@ -200,7 +200,7 @@ const renderComponent = (
 };
 
 export const SlideRenderer: React.FC<SlideRendererProps> = ({
-  layoutId,
+  slideId,
   className = "",
 }) => {
   const [layout, setLayout] = useState<Layout | null>(null);
@@ -217,10 +217,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         setLoading(true);
         setError(null);
 
-        // Load layout
-        const layoutData = await layoutsService.getById(layoutId);
+        // Load layout associated with this slideId
+        const layoutData = await layoutsService.getBySlideId(slideId);
         if (!layoutData) {
-          throw new Error(`Layout not found: ${layoutId}`);
+          throw new Error(`Layout not found for slide ${slideId}`);
         }
         setLayout(layoutData);
 
@@ -254,10 +254,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       }
     };
 
-    if (layoutId) {
+    if (slideId) {
       loadSlideData();
     }
-  }, [layoutId]);
+  }, [slideId]);
 
   if (loading) {
     return (

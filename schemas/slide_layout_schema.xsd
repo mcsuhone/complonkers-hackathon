@@ -12,6 +12,11 @@
     <xs:sequence>
       <xs:element name="Slide" type="SlideType" maxOccurs="unbounded"/>
     </xs:sequence>
+    <xs:attribute name="layoutId" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>Reference ID to a layout definition. The layout renderer will use this ID to fetch the corresponding layout definition from the layout registry/store.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <!-- Definition of a single slide -->
@@ -54,7 +59,7 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:attribute name="tag" type="TextTagType" use="optional" default="p"/>
-        <xs:attribute name="textId" type="xs:string" use="optional">
+        <xs:attribute name="textComponentId" type="xs:string" use="optional">
           <xs:annotation>
             <xs:documentation>Reference ID to a text component definition. The text renderer will use this ID to fetch the corresponding text content and styling from the text component registry/store.</xs:documentation>
           </xs:annotation>
@@ -97,9 +102,9 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:attribute name="type" type="ChartKindType" use="optional"/>
-        <xs:attribute name="chartId" type="xs:string" use="optional">
+        <xs:attribute name="chartComponentId" type="xs:string" use="optional">
           <xs:annotation>
-            <xs:documentation>Reference ID to a chart definition. The chart renderer will use this ID to fetch the corresponding chart definition from the chart registry/store.</xs:documentation>
+            <xs:documentation>Reference ID to a chart component definition. The chart renderer will use this ID to fetch the corresponding chart definition from the chart registry/store.</xs:documentation>
           </xs:annotation>
         </xs:attribute>
       </xs:extension>
