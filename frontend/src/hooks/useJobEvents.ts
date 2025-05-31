@@ -14,6 +14,7 @@ export function useJobEvents(jobId: string) {
 
     eventSource.onmessage = (e) => {
       try {
+        console.log("useJobEvents EventSource message:", e.data);
         const data = JSON.parse(e.data);
         setEvents((prev) => [...prev, data]);
       } catch {

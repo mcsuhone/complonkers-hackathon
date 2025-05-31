@@ -19,8 +19,10 @@ async def listen_stream(job_id: str) -> AsyncGenerator[str, None]:
     """
     stream_key = f"events:{job_id}"
     last_id = "0-0"
+    print(f"Listening to stream {stream_key} with last_id {last_id}")
 
     while True:
+        print(f"Listening to stream {stream_key} with last_id {last_id}")
         # Block until a new entry arrives
         results = await redis_client.xread({stream_key: last_id}, block=0, count=1)
         if not results:

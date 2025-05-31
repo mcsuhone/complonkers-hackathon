@@ -4,7 +4,7 @@ import logging
 
 from fastapi import APIRouter, BackgroundTasks, Request
 from pydantic import BaseModel
-from sse_starlette.sse import EventSourceResponse
+from starlette.responses import StreamingResponse
 
 from redis_utils.redis_stream import publish_message, listen_stream
 
@@ -39,15 +39,21 @@ async def events(request: Request, job_id: str):
     """
     Stream events from Redis for the given jobId via Server-Sent Events.
     """
-    logger.info(f"GET /api/events/{job_id} - client subscribed to events")
+    logger.info(f"Subscriber connected for job {job_id}")
+
     async def event_generator():
+        print(f"Start SSE generator for job {job_id}")
+        # Send initial event to establish SSE connection
+        yield f"data: connected to job {job_id}\n\n"
         async for msg in listen_stream(job_id):
             if await request.is_disconnected():
                 logger.info(f"Client disconnected from /api/events/{job_id}")
                 break
-            yield {"event": "message", "data": msg}
+            # Format as Server-Sent Events data frame
+            yield f"data: {msg}\n\n"
 
-    return EventSourceResponse(event_generator())
+    # Stream back as text/event-stream
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 class PushDummyRequest(BaseModel):
