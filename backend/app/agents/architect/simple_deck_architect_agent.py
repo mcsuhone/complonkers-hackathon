@@ -91,7 +91,7 @@ simple_deck_architect_agent = LlmAgent(
     output_key="simple_deck_slides_json"
 )
 
-async def main_test_simple():
+async def run_architect_agent(initial_state: dict):
     from google.adk.sessions import InMemorySessionService
     from google.adk.runners import Runner
     from google.genai import types as genai_types
@@ -109,10 +109,6 @@ async def main_test_simple():
     }
     
 
-    initial_state = {
-        "goal": "Boost Q4 Sales for New Eco-Product Line",
-        "context": "Presenting to the executive board and marketing VPs.",
-    }
     initial_state["db_config"] = db_connection_config_real
 
     session_service = InMemorySessionService()
@@ -153,19 +149,24 @@ async def main_test_simple():
             print(generated_slides_json)
             try:
                 parsed_slides = json.loads(generated_slides_json)
-                print("\nParsed Presentation Outline:")
-                print(json.dumps(parsed_slides, indent=2))
+                return parsed_slides
             except json.JSONDecodeError as e:
                 print(f"\nCould not parse the generated JSON: {e}")
+                return None
         else:
             print(f"\nNo output found in session state for key '{simple_deck_architect_agent.output_key}'.")
+            return None
     else:
         print("No final session found.")
-    print("-------------------------------\n")
+        return None
 
 if __name__ == "__main__":
     import asyncio
     try:
-        asyncio.run(main_test_simple())
+        initial_state = {
+            "goal": "Boost Q4 Sales for New Eco-Product Line",
+            "context": "Presenting to the executive board and marketing VPs.",
+        }
+        asyncio.run(run_architect_agent(initial_state))
     except Exception as e:
         logger.error(f"Error running main_test_simple: {e}", exc_info=True) 
