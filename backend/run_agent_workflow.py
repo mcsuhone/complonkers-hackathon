@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
-from agents.data_analyst_agent import analyst_agent
+from agents.data_analyst_agent import get_analyst_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.deck_architect_agent import deck_architect_agent
@@ -140,6 +140,7 @@ async def _run_agent_workflow(
             
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
+            analyst_agent = get_analyst_agent()
             slide_result = await run_ai_agent(
                 analyst_agent,  # Reusing interpreter agent for simplicity
                 subject_id=subject_id,

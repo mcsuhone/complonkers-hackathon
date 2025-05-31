@@ -84,147 +84,156 @@ CodeInterpreterTool = CrewaiTool(
 # DEFINE AGENT
 ########################################################
 
-db_service = DatabaseService(DB_PARAMS)
+def get_data_analyst_instructions():
+    db_service = DatabaseService(DB_PARAMS)
 
-asyncio.run(db_service.connect())
+    asyncio.run(db_service.connect())
 
-schemas = asyncio.run(db_service.get_table_schemas())
+    schemas = asyncio.run(db_service.get_table_schemas())
 
-asyncio.run(db_service.close())
+    asyncio.run(db_service.close())
 
-SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 
-SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
+    SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
 
-# Instructions for the data analyst agent
-DATA_ANALYST_INSTRUCTIONS = f"""
-You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and the database schemas provided below. Your primary role is to plan the content and data linkages, not to format the final XML, but you MUST use exact database schema names.
+    # Instructions for the data analyst agent
+    return f"""
+    You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and the database schemas provided below. Your primary role is to plan the content and data linkages, not to format the final XML, but you MUST use exact database schema names.
 
-# Instructions for the data analyst agent
-Your tasks are:
-1. Create insightful data analysis based on the 'slide_ideas.xml' and the database schemas provided above.
-2. Transmit those ideas with instructions to the script_agent. Make sure that the instructions use the actual names from the database schema to reduce confusion. The instructions should have the agent generate a JSON.
-3. Ensure that you include at least one piece of text in your decision as a slide is likely to require it
-YOUR TASK:
-For each 'SlideIdea' from the input 'slide_ideas.xml':
-1.  Carefully analyze its 'ContentDescription' and 'DataInsights' fields. These fields dictate the information and visualizations required for the slide.
-2.  Based on this analysis, determine:
-    a.  Appropriate data visualizations (e.g., charts). These will become 'Chart' components in the output 'slide_schema.xml'.
-    b.  Key statistics, facts, or textual summaries. These will become 'Text' components in the output 'slide_schema.xml'.
-3.  Consult the provided database schemas to identify the specific tables and columns needed to generate the data for these charts and text elements.
-4.  For each 'Chart' and 'Text' component you define in the output 'slide_schema.xml', its 'Content' element should act as a placeholder or a specific instruction for the `script_agent`. This placeholder should clearly describe the data to be fetched or the calculation to be performed.
+    # Instructions for the data analyst agent
+    Your tasks are:
+    1. Create insightful data analysis based on the 'slide_ideas.xml' and the database schemas provided above.
+    2. Transmit those ideas with instructions to the script_agent. Make sure that the instructions use the actual names from the database schema to reduce confusion. The instructions should have the agent generate a JSON.
+    3. Ensure that you include at least one piece of text in your decision as a slide is likely to require it
+    YOUR TASK:
+    For each 'SlideIdea' from the input 'slide_ideas.xml':
+    1.  Carefully analyze its 'ContentDescription' and 'DataInsights' fields. These fields dictate the information and visualizations required for the slide.
+    2.  Based on this analysis, determine:
+        a.  Appropriate data visualizations (e.g., charts). These will become 'Chart' components in the output 'slide_schema.xml'.
+        b.  Key statistics, facts, or textual summaries. These will become 'Text' components in the output 'slide_schema.xml'.
+    3.  Consult the provided database schemas to identify the specific tables and columns needed to generate the data for these charts and text elements.
+    4.  For each 'Chart' and 'Text' component you define in the output 'slide_schema.xml', its 'Content' element should act as a placeholder or a specific instruction for the `script_agent`. This placeholder should clearly describe the data to be fetched or the calculation to be performed.
 
-GUIDING PRINCIPLES FOR ANALYSIS (using 'ContentDescription' and 'DataInsights'):
+    GUIDING PRINCIPLES FOR ANALYSIS (using 'ContentDescription' and 'DataInsights'):
 
-1.  VISUALIZATION CHOICE:
-    *   What type of chart (bar, line, pie, etc., from 'ChartKindType' in 'slide_schema.xsd') would best represent the 'DataInsights'?
-    *   What data dimensions are needed for this chart (e.g., categories, values, time series)?
+    1.  VISUALIZATION CHOICE:
+        *   What type of chart (bar, line, pie, etc., from 'ChartKindType' in 'slide_schema.xsd') would best represent the 'DataInsights'?
+        *   What data dimensions are needed for this chart (e.g., categories, values, time series)?
 
-2.  TEXTUAL CONTENT:
-    *   What key statistics (e.g., percentages, totals, averages, trends) from the 'DataInsights' should be highlighted as text?
-    *   What narrative points from 'ContentDescription' can be supported by data and presented as text?
+    2.  TEXTUAL CONTENT:
+        *   What key statistics (e.g., percentages, totals, averages, trends) from the 'DataInsights' should be highlighted as text?
+        *   What narrative points from 'ContentDescription' can be supported by data and presented as text?
 
-3.  DATA REQUIREMENTS:
-    *   Which database tables and columns contain the raw data needed?
-    *   What calculations, aggregations (SUM, AVG, COUNT), or transformations are required on the raw data?
+    3.  DATA REQUIREMENTS:
+        *   Which database tables and columns contain the raw data needed?
+        *   What calculations, aggregations (SUM, AVG, COUNT), or transformations are required on the raw data?
 
-4.  FEASIBILITY:
-    *   Ensure the requested data and visualizations are reasonably derivable from the provided database schemas.
+    4.  FEASIBILITY:
+        *   Ensure the requested data and visualizations are reasonably derivable from the provided database schemas.
 
-OUTPUT REQUIREMENTS:
-Your SOLE output must be a single, valid XML string that conforms to 'slide_schema.xsd'. This XML string will represent the structure of one or more slides.
--   Each slide in your output XML should correspond to a 'SlideIdea' from the input.
--   Populate slides with 'Chart' and 'Text' components as determined by your analysis.
--   The 'id' attributes for slides and components should be meaningful (e.g., derived from 'SlideId' or descriptive of content).
--   The 'Content' element within each 'Chart' or 'Text' component in your generated 'slide_schema.xml' MUST be a descriptive placeholder for the data. This placeholder will guide the `script_agent` in fetching and injecting the actual data.
-    Example for a Chart:
-    <Chart type="pie" id="salesDistributionChart" classes="">
-      <Content>Pie chart showing sales distribution by product category for the last quarter. Requires: product category, total sales amount per category.</Content>
-    </Chart>
+    OUTPUT REQUIREMENTS:
+    Your SOLE output must be a single, valid XML string that conforms to 'slide_schema.xsd'. This XML string will represent the structure of one or more slides.
+    -   Each slide in your output XML should correspond to a 'SlideIdea' from the input.
+    -   Populate slides with 'Chart' and 'Text' components as determined by your analysis.
+    -   The 'id' attributes for slides and components should be meaningful (e.g., derived from 'SlideId' or descriptive of content).
+    -   The 'Content' element within each 'Chart' or 'Text' component in your generated 'slide_schema.xml' MUST be a descriptive placeholder for the data. This placeholder will guide the `script_agent` in fetching and injecting the actual data.
+        Example for a Chart:
+        <Chart type="pie" id="salesDistributionChart" classes="">
+        <Content>Pie chart showing sales distribution by product category for the last quarter. Requires: product category, total sales amount per category.</Content>
+        </Chart>
 
-    Example for Text:
-    <Text tag="h2" id="totalRevenueText" classes="text-xl font-bold">
-      <Content>Total company revenue for the previous fiscal year. Requires: SUM(invoices.total) WHERE invoice_date is in previous fiscal year.</Content>
-    </Text>
-    <Text tag="p" id="insightSummaryText" classes="mt-2">
-      <Content>Summary of key sales trends observed over the past 12 months. Requires: Monthly sales data, trend analysis (e.g., growth rate).</Content>
-    </Text>
+        Example for Text:
+        <Text tag="h2" id="totalRevenueText" classes="text-xl font-bold">
+        <Content>Total company revenue for the previous fiscal year. Requires: SUM(invoices.total) WHERE invoice_date is in previous fiscal year.</Content>
+        </Text>
+        <Text tag="p" id="insightSummaryText" classes="mt-2">
+        <Content>Summary of key sales trends observed over the past 12 months. Requires: Monthly sales data, trend analysis (e.g., growth rate).</Content>
+        </Text>
 
--   Do NOT invent data. Your role is to define the structure and specify WHAT data is needed for the `script_agent`.
--   The 'Content' elements are crucial for the `script_agent`. Make them clear and precise.
--   The output must be ONLY the XML string. Do not include any other explanatory text, greetings, or markdown formatting around the XML.
--   Use the tailwind classes to have dynamic good looking slides.
-        - For the outer most element, always define a background and some padding. py-8 px-16 are good values.
-        - Make sure text has a good font size and colors. Colors should be opposite to the background.
-        - You can use different shades and colors of backgrounds but be professional with those.
--   Dont put more than 2 charts per slide.
--   Keep the slides short and concise.
--   Focus a lot on the wording and make the wording analytical and smart. Imagine being a CEO Presenting to the board.
+    -   Do NOT invent data. Your role is to define the structure and specify WHAT data is needed for the `script_agent`.
+    -   The 'Content' elements are crucial for the `script_agent`. Make them clear and precise.
+    -   The output must be ONLY the XML string. Do not include any other explanatory text, greetings, or markdown formatting around the XML.
+    -   Use the tailwind classes to have dynamic good looking slides.
+            - For the outer most element, always define a background and some padding. py-8 px-16 are good values.
+            - Make sure text has a good font size and colors. Colors should be opposite to the background.
+            - You can use different shades and colors of backgrounds but be professional with those.
+    -   Dont put more than 2 charts per slide.
+    -   Keep the slides short and concise.
+    -   Focus a lot on the wording and make the wording analytical and smart. Imagine being a CEO Presenting to the board.
 
-THIS IS THE ENTIRE SCHEMA YOU CAN USE:
+    THIS IS THE ENTIRE SCHEMA YOU CAN USE:
 
-{SCHEMA}
+    {SCHEMA}
 
-"""
+    """
+def get_script_instructions():
+    
 
-SCRIPT_INSTRUCTIONS = """
-You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
+    return """
+    You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
 
-The analyst's plan will be a structured text, with component details separated by '---'. Each component plan will specify:
-*   `SlideId`
-*   `ComponentType` (`Text` or `Chart`)
-*   `InstructionsForContent` (details for data fetching/processing using exact schema names, text construction, or chart data prep to JSON and visualization goal)
+    The analyst's plan will be a structured text, with component details separated by '---'. Each component plan will specify:
+    *   `SlideId`
+    *   `ComponentType` (`Text` or `Chart`)
+    *   `InstructionsForContent` (details for data fetching/processing using exact schema names, text construction, or chart data prep to JSON and visualization goal)
 
-Your tasks:
-1.  **Parse Analyst's Plan:** Interpret the structured text from `{+analysis_proposals}` to identify each planned component and its details.
-2.  **Construct SlideDeck XML:** You will build the entire XML structure (`<SlideDeck>`, `<Slide id="...">`, `<Text ...>`, `<Chart ...>`) according to `slide_schema.xsd`.
-3.  **Execute and Populate Content:** For each component planned by the analyst:
-    *   Create the appropriate XML element (e.g., `<Text tag="p">` or `<Chart type="bar">`). Assign classes or other attributes as appropriate or default.
-    *   Read the `InstructionsForContent`.
-    *   Use your tools (`execute_sql_query`, `CodeInterpreterTool`) to perform the data operations (SQL queries, Python calculations) specified by the analyst, **expecting exact schema names in those instructions.**
-    *   **For `Text` components:**
-        *   Generate the final text string as per `InstructionsForContent`.
-        *   Place this text inside the `<Content>` tag of the `<Text>` element you created.
-    *   **For `Chart` components:**
-        *   Execute data preparation to **JSON format** as per `InstructionsForContent`.
-        *   Use your `visualizer_tool`, passing it BOTH the prepared JSON data AND the visualization goal/description from `InstructionsForContent`.
-        *   Ensure the `visualizer_tool`'s output XML (which should include the data) is complete. Place this entire CDATA-wrapped XML output from `visualizer_tool` inside the `<Content>` tag of the `<Chart>` element you created.
-    *   Add the fully formed component XML to the correct `<Slide id="...">` within your overall `<SlideDeck>` structure.
-4.  **Error Handling:** If any step in processing a specific planned component fails (e.g., data generation error, `visualizer_tool` error), that entire component (the one you were trying to build) MUST BE OMITTED from the final `slide_schema.xml`. Continue to process other planned components.
-5.  **Output Requirement:** Your SOLE and FINAL output MUST be a single, valid XML string, representing the complete `slide_schema.xml`. This XML must contain all successfully processed components, correctly structured according to `slide_schema.xsd`.
+    Your tasks:
+    1.  **Parse Analyst's Plan:** Interpret the structured text from `{+analysis_proposals}` to identify each planned component and its details.
+    2.  **Construct SlideDeck XML:** You will build the entire XML structure (`<SlideDeck>`, `<Slide id="...">`, `<Text ...>`, `<Chart ...>`) according to `slide_schema.xsd`.
+    3.  **Execute and Populate Content:** For each component planned by the analyst:
+        *   Create the appropriate XML element (e.g., `<Text tag="p">` or `<Chart type="bar">`). Assign classes or other attributes as appropriate or default.
+        *   Read the `InstructionsForContent`.
+        *   Use your tools (`execute_sql_query`, `CodeInterpreterTool`) to perform the data operations (SQL queries, Python calculations) specified by the analyst, **expecting exact schema names in those instructions.**
+        *   **For `Text` components:**
+            *   Generate the final text string as per `InstructionsForContent`.
+            *   Place this text inside the `<Content>` tag of the `<Text>` element you created.
+        *   **For `Chart` components:**
+            *   Execute data preparation to **JSON format** as per `InstructionsForContent`.
+            *   Use your `visualizer_tool`, passing it BOTH the prepared JSON data AND the visualization goal/description from `InstructionsForContent`.
+            *   Ensure the `visualizer_tool`'s output XML (which should include the data) is complete. Place this entire CDATA-wrapped XML output from `visualizer_tool` inside the `<Content>` tag of the `<Chart>` element you created.
+        *   Add the fully formed component XML to the correct `<Slide id="...">` within your overall `<SlideDeck>` structure.
+    4.  **Error Handling:** If any step in processing a specific planned component fails (e.g., data generation error, `visualizer_tool` error), that entire component (the one you were trying to build) MUST BE OMITTED from the final `slide_schema.xml`. Continue to process other planned components.
+    5.  **Output Requirement:** Your SOLE and FINAL output MUST be a single, valid XML string, representing the complete `slide_schema.xml`. This XML must contain all successfully processed components, correctly structured according to `slide_schema.xsd`.
 
-"""
+    """
 
-# Define how agents should process and pass data
-analyst_agent = Agent(
-    name="analyst_agent",
-    model=MODEL_GEMINI_2_5_FLASH,
-    generate_content_config= types.GenerateContentConfig(
-        temperature=1,
-    ),
-    description="An AI agent specialized in analyzing database schemas and proposing analyses.",
-    instruction=DATA_ANALYST_INSTRUCTIONS,
-    output_key="analysis_proposals"
-)
+def get_analyst_agent():
+    # Define how agents should process and pass data
+    return Agent(
+        name="analyst_agent",
+        model=MODEL_GEMINI_2_5_FLASH,
+        generate_content_config= types.GenerateContentConfig(
+            temperature=1,
+        ),
+        description="An AI agent specialized in analyzing database schemas and proposing analyses.",
+        instruction=get_data_analyst_instructions(),
+        output_key="analysis_proposals"
+    )
 
-script_agent = Agent(
-    name="script_agent",
-    model=MODEL_GEMINI_2_5_FLASH,
-    description="An AI agent specialized in generating, running, and saving results from scripts, and using visualization tools.",
-    instruction=SCRIPT_INSTRUCTIONS,
-    tools=[FileWritingTool, CodeInterpreterTool, execute_sql_query, visualizer_tool],
-)
+def get_script_agent():
+    return Agent(
+        name="script_agent",
+        model=MODEL_GEMINI_2_5_FLASH,
+        description="An AI agent specialized in generating, running, and saving results from scripts, and using visualization tools.",
+        instruction=get_script_instructions(),
+        tools=[FileWritingTool, CodeInterpreterTool, execute_sql_query, visualizer_tool],
+    )
 
-seq_agent = SequentialAgent(
-    name="data_analyst_and_script_agent",
-    sub_agents=[analyst_agent, script_agent]
-)
+def get_sequential_agent():
+    return SequentialAgent(
+        name="data_analyst_and_script_agent",
+        sub_agents=[get_analyst_agent(), get_script_agent()]
+    )
 
 db_service = DatabaseService(DB_PARAMS)
 
 if __name__ == "__main__":
     os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
     os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
+
+    seq_agent = get_sequential_agent()
+
     print(f"Agent '{seq_agent.name}' created using model '{MODEL_GEMINI_2_5_FLASH}'.")
     
     session_service = InMemorySessionService()
