@@ -18,6 +18,7 @@ export const slidesService = {
       .where("presentationId")
       .equals(presentationId)
       .toArray();
+    console.log("Debug: Slides:", slides);
     return slides.sort((a, b) => a.index - b.index);
   },
 

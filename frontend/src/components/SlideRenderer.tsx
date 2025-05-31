@@ -205,20 +205,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   xml,
   className = "",
 }) => {
-  // Early return if xml not provided
-  if (!xml) {
-    return (
-      <div className={`flex items-center justify-center h-64 ${className}`}>
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">⏳</div>
-          <div className="text-sm text-muted-foreground">
-            Loading slide content...
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // console.log("Debug: SlideRenderer xml:", xml);
 
+  // Ensure hooks are always called before any early returns
   const [textComponents, setTextComponents] = React.useState<
     Record<string, TextComponent>
   >({});
@@ -239,6 +228,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       );
     })();
   }, []);
+
+  // Early return if xml not provided
+  if (!xml) {
+    return (
+      <div className={`flex items-center justify-center h-64 ${className}`}>
+        <div className="text-center">
+          <div className="text-muted-foreground mb-2">⏳</div>
+          <div className="text-sm text-muted-foreground">
+            Loading slide content...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const xmlDoc = parseLayoutXML(xml);
   if (!xmlDoc) {

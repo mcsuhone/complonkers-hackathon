@@ -58,7 +58,6 @@ export function useJobEvents(jobId: string) {
           // Update slide xml content for each slide
           await Promise.all(
             slides.map((slide) => {
-              console.log("Debug: Slide:", slide);
               console.log("Debug: Slide XML:", slide.xml);
               console.log("Debug: Slide ID:", slide.slideId);
               slidesService.updateXmlBySlideId(jobId, slide.slideId, slide.xml);
