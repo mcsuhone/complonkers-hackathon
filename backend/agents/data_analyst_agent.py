@@ -62,6 +62,7 @@ async def execute_sql_query(query: str) -> str:
     Returns:
         A string representation of the query results or an error message.
     """
+    db_service = DatabaseService(DB_PARAMS)
     try:
         # The global db_service instance is used here.
         # async with will call db_service.__aenter__ (connect) and db_service.__aexit__ (close)
@@ -87,9 +88,10 @@ CodeInterpreterTool = CrewaiTool(
 ########################################################
 
 def get_data_analyst_instructions():
-    service = DatabaseService(DB_PARAMS)
-    with service as db:
-        schemas = db.get_table_schemas()
+    # service = DatabaseService(DB_PARAMS)
+    # with service as db:
+    #     schemas = db.get_table_schemas()
+    schemas = ''
 
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 
@@ -175,7 +177,7 @@ def get_data_analyst_instructions():
             <BarStyle cornerRadius="4" strokeWidth="1"/>
           </Styling>
           <Interactions>
-            <Tooltip enabled="true" format="Revenue: ${value}M"/>
+            <Tooltip enabled="true" format="Revenue: $1000M"/>
             <Hover highlight="true"/>
           </Interactions>
         </ChartDefinition>
@@ -265,7 +267,7 @@ def get_sequential_agent():
         sub_agents=[get_analyst_agent(), get_script_agent()]
     )
 
-db_service = DatabaseService(DB_PARAMS)
+# db_service = DatabaseService(DB_PARAMS)
 
 if __name__ == "__main__":
     os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
