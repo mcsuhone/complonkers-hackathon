@@ -269,7 +269,64 @@
       <xs:enumeration value="ribbon"/>
     </xs:restriction>
   </xs:simpleType>
-  <!-- ... Additional chart definitions (DimensionsType, MarginsType, AxesType, AxisType, ScaleTypeEnum, LegendType, LegendPositionEnum, OrientationEnum, DataType, DataSourceType, DataSourceTypeEnum, DataMappingType, FieldType, FieldRoleEnum, DataTypeEnum, StylingType, ColorsType, ColorSchemeEnum, FontsType, AnimationType, EasingEnum, InteractionsType, TooltipType, ZoomType, BrushType, BrushAxisEnum, ProjectionType, ProjectionTypeEnum, HierarchyType, TileTypeEnum, ForceType, ForcesType, CenterForceType, CollideForceType, LinkForceType, ManyBodyForceType, PositionForceType, RadialForceType, TransitionType, PanType, DragType, ClickType, HoverType, SelectionType, SelectionModeEnum) should be pasted here in full. -->
+  <!-- DataType and related definitions -->
+  <xs:complexType name="DataType">
+    <xs:sequence>
+      <xs:element name="DataSource" type="DataSourceType" maxOccurs="unbounded"/>
+      <xs:element name="DataMapping" type="DataMappingType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DataSourceType">
+    <xs:sequence>
+      <xs:element name="Field" type="FieldType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="type" type="DataSourceTypeEnum" use="required"/>
+    <xs:attribute name="source" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="DataSourceTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="table"/>
+      <xs:enumeration value="inline"/>
+      <xs:enumeration value="external"/>
+      <xs:enumeration value="api"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="DataMappingType">
+    <xs:sequence>
+      <xs:element name="Mapping" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="field" type="xs:string" use="required"/>
+    <xs:attribute name="role" type="FieldRoleEnum" use="required"/>
+    <xs:attribute name="dataType" type="DataTypeEnum" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="FieldType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="number"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FieldRoleEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="dimension"/>
+      <xs:enumeration value="measure"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DataTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="integer"/>
+      <xs:enumeration value="decimal"/>
+      <xs:enumeration value="boolean"/>
+      <xs:enumeration value="date"/>
+      <xs:enumeration value="datetime"/>
+    </xs:restriction>
+  </xs:simpleType>
   <!-- inlined chart definitions end -->
 
 </xs:schema>

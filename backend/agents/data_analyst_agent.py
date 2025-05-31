@@ -9,11 +9,11 @@ import asyncio
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google.adk.tools import FunctionTool
-from services.database_service import DatabaseService
+from .services.database_service import DatabaseService
 
-from visualizer import visualizer_tool
+from .visualizer import visualizer_tool
 
-from lib import load_xml_output_schema
+from .lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
