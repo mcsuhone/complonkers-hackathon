@@ -1,6 +1,9 @@
 import json
 import logging
 import re
+
+import numpy as np
+
 from agent_utils.run_ai_agent import run_ai_agent
 from agents.data_analyst_agent import get_analyst_agent
 from agents.data_analyst_agent import get_sequential_agent
@@ -58,6 +61,71 @@ async def run_agent_workflow(
         logger.error(f"Error running agent workflow for {subject_id}: {e}")
         print(f"Error running agent workflow for {subject_id}: {e}")
         return None
+    
+
+placeholder_slop = '''<!-- Financial Performance Slide with Chart -->
+  <Slide id="financial-slide" classes="bg-gray-50 p-6">
+    <Text mode="content" tag="h1" classes="text-4xl font-bold mb-8 text-center text-gray-800">
+      <Content>Q4 Financial Performance</Content>
+    </Text>
+    
+    <Container classes="grid grid-cols-2 gap-8">
+      <Container classes="space-y-4">
+        <Text mode="content" tag="h2" classes="text-2xl font-semibold text-gray-700">
+          <Content>Key Metrics</Content>
+        </Text>
+        <List mode="content" ordered="false" classes="text-lg space-y-2">
+          <Content>Revenue: $2.4M (+15% YoY)
+Gross Margin: 68%
+Operating Expenses: $1.1M
+Net Income: $520K
+Customer Acquisition Cost: $240</Content>
+        </List>
+      </Container>
+      
+      <Chart mode="content" type="bar" classes="w-full h-96">
+        <Content>Quarterly revenue breakdown chart showing growth trend</Content>
+        <ChartDefinition id="revenue-chart">
+          <ChartConfig type="bar" title="Quarterly Revenue Growth" theme="corporate">
+            <Dimensions width="500" height="400"/>
+            <Margins top="20" right="30" bottom="40" left="50"/>
+            <Axes>
+              <XAxis field="quarter" title="Quarter"/>
+              <YAxis field="revenue" title="Revenue ($M)" format="currency"/>
+            </Axes>
+            <Legend position="top-right" orientation="vertical"/>
+          </ChartConfig>
+          <Data>
+            <DataSource type="inline" source="quarterly-revenue">
+              <Field name="quarter" type="string"/>
+              <Field name="revenue" type="number"/>
+            </DataSource>
+            <DataMapping field="quarter" role="dimension" dataType="string">
+              <Mapping>Q1 2024</Mapping>
+              <Mapping>Q2 2024</Mapping>
+              <Mapping>Q3 2024</Mapping>
+              <Mapping>Q4 2024</Mapping>
+            </DataMapping>
+            <DataMapping field="revenue" role="measure" dataType="decimal">
+              <Mapping>1.8</Mapping>
+              <Mapping>2.1</Mapping>
+              <Mapping>2.2</Mapping>
+              <Mapping>2.4</Mapping>
+            </DataMapping>
+          </Data>
+          <Styling>
+            <ColorScheme>["#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"]</ColorScheme>
+            <BarStyle cornerRadius="4" strokeWidth="1"/>
+          </Styling>
+          <Interactions>
+            <Tooltip enabled="true" format="Revenue: ${value}M"/>
+            <Hover highlight="true"/>
+          </Interactions>
+        </ChartDefinition>
+      </Chart>
+    </Container>
+  </Slide>'''    
+
 
 async def _run_agent_workflow(
     subject_id: str,
@@ -147,14 +215,18 @@ async def _run_agent_workflow(
             
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
-            analyst_agent = get_sequential_agent()
-            slide_result = await run_ai_agent(
-                analyst_agent,  # Reusing interpreter agent for simplicity
-                subject_id=subject_id,
-                initial_state={"slide_xml": analyst_message},
-                message_parts=[analyst_message],
-                app_name=slide_app
-            )
+            
+            if np.random.rand() < 0.4:
+                slide_result = placeholder_slop
+            else:
+                analyst_agent = get_sequential_agent()
+                slide_result = await run_ai_agent(
+                    analyst_agent,  # Reusing interpreter agent for simplicity
+                    subject_id=subject_id,
+                    initial_state={"slide_xml": analyst_message},
+                    message_parts=[analyst_message],
+                    app_name=slide_app
+                )
             if slide_result is None:
                 logger.error(f"No result from agent {analyst_agent.name} for slide idea in {subject_id}")
                 continue
