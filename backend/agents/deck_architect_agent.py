@@ -17,6 +17,7 @@ from google.genai import types as genai_types
 
 # Local imports
 from .services.database_service import DatabaseService
+from .lib import load_xml_output_schema
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,19 +48,7 @@ class Config:
     # Database Placeholders
     PLACEHOLDER_DBS = ["your_db_name", "test_db_placeholder"]
 
-def load_xml_output_schema() -> str:
-    """
-    Load and return the XML schema for slide ideas validation.
-    
-    Returns:
-        etree.XMLSchema: The loaded XML schema for validating slide ideas.
-    
-    Raises:
-        FileNotFoundError: If the schema file cannot be found.
-        etree.XMLSchemaParseError: If the schema is invalid.
-    """
-    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), Config.SCHEMA_RELATIVE_PATH))) as f:
-        return f.read()
+
 
 
 async def get_database_schema(tool_context: ToolContext) -> Dict[str, Any]:
@@ -114,7 +103,7 @@ Your process is as follows:
     *   Based on the `goal`, `context`, and your internal understanding of the database schema (if available and summarized), create an XML document.
     *   The XML document must conform to the `schemas/slide_ideas.xsd` schema provided below.
 
-{load_xml_output_schema()}
+{load_xml_output_schema(Config.SCHEMA_RELATIVE_PATH)}
 
 IMPORTANT: Output ONLY the raw XML string. Do not wrap it in code blocks, JSON, or any other text."""
 

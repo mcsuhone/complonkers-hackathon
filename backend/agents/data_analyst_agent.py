@@ -13,6 +13,8 @@ from services.database_service import DatabaseService
 
 from visualizer import visualizer_tool
 
+from .services.database_service import DatabaseService
+from .lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
@@ -91,19 +93,80 @@ schemas = asyncio.run(db_service.get_table_schemas())
 
 asyncio.run(db_service.close())
 
+SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 
+SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
 
 # Instructions for the data analyst agent
 DATA_ANALYST_INSTRUCTIONS = f"""
 You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and the database schemas provided below. Your primary role is to plan the content and data linkages, not to format the final XML, but you MUST use exact database schema names.
 
-Database Schemas:
-{schemas}
-
+# Instructions for the data analyst agent
 Your tasks are:
 1. Create insightful data analysis based on the 'slide_ideas.xml' and the database schemas provided above.
 2. Transmit those ideas with instructions to the script_agent. Make sure that the instructions use the actual names from the database schema to reduce confusion. The instructions should have the agent generate a JSON.
-3. Ensure that you include at least one piece of text in your decision as a slide is likely to require it"""
+3. Ensure that you include at least one piece of text in your decision as a slide is likely to require it
+YOUR TASK:
+For each 'SlideIdea' from the input 'slide_ideas.xml':
+1.  Carefully analyze its 'ContentDescription' and 'DataInsights' fields. These fields dictate the information and visualizations required for the slide.
+2.  Based on this analysis, determine:
+    a.  Appropriate data visualizations (e.g., charts). These will become 'Chart' components in the output 'slide_schema.xml'.
+    b.  Key statistics, facts, or textual summaries. These will become 'Text' components in the output 'slide_schema.xml'.
+3.  Consult the provided database schemas to identify the specific tables and columns needed to generate the data for these charts and text elements.
+4.  For each 'Chart' and 'Text' component you define in the output 'slide_schema.xml', its 'Content' element should act as a placeholder or a specific instruction for the `script_agent`. This placeholder should clearly describe the data to be fetched or the calculation to be performed.
+
+GUIDING PRINCIPLES FOR ANALYSIS (using 'ContentDescription' and 'DataInsights'):
+
+1.  VISUALIZATION CHOICE:
+    *   What type of chart (bar, line, pie, etc., from 'ChartKindType' in 'slide_schema.xsd') would best represent the 'DataInsights'?
+    *   What data dimensions are needed for this chart (e.g., categories, values, time series)?
+
+2.  TEXTUAL CONTENT:
+    *   What key statistics (e.g., percentages, totals, averages, trends) from the 'DataInsights' should be highlighted as text?
+    *   What narrative points from 'ContentDescription' can be supported by data and presented as text?
+
+3.  DATA REQUIREMENTS:
+    *   Which database tables and columns contain the raw data needed?
+    *   What calculations, aggregations (SUM, AVG, COUNT), or transformations are required on the raw data?
+
+4.  FEASIBILITY:
+    *   Ensure the requested data and visualizations are reasonably derivable from the provided database schemas.
+
+OUTPUT REQUIREMENTS:
+Your SOLE output must be a single, valid XML string that conforms to 'slide_schema.xsd'. This XML string will represent the structure of one or more slides.
+-   Each slide in your output XML should correspond to a 'SlideIdea' from the input.
+-   Populate slides with 'Chart' and 'Text' components as determined by your analysis.
+-   The 'id' attributes for slides and components should be meaningful (e.g., derived from 'SlideId' or descriptive of content).
+-   The 'Content' element within each 'Chart' or 'Text' component in your generated 'slide_schema.xml' MUST be a descriptive placeholder for the data. This placeholder will guide the `script_agent` in fetching and injecting the actual data.
+    Example for a Chart:
+    <Chart type="pie" id="salesDistributionChart" classes="">
+      <Content>Pie chart showing sales distribution by product category for the last quarter. Requires: product category, total sales amount per category.</Content>
+    </Chart>
+
+    Example for Text:
+    <Text tag="h2" id="totalRevenueText" classes="text-xl font-bold">
+      <Content>Total company revenue for the previous fiscal year. Requires: SUM(invoices.total) WHERE invoice_date is in previous fiscal year.</Content>
+    </Text>
+    <Text tag="p" id="insightSummaryText" classes="mt-2">
+      <Content>Summary of key sales trends observed over the past 12 months. Requires: Monthly sales data, trend analysis (e.g., growth rate).</Content>
+    </Text>
+
+-   Do NOT invent data. Your role is to define the structure and specify WHAT data is needed for the `script_agent`.
+-   The 'Content' elements are crucial for the `script_agent`. Make them clear and precise.
+-   The output must be ONLY the XML string. Do not include any other explanatory text, greetings, or markdown formatting around the XML.
+-   Use the tailwind classes to have dynamic good looking slides.
+        - For the outer most element, always define a background and some padding. py-8 px-16 are good values.
+        - Make sure text has a good font size and colors. Colors should be opposite to the background.
+        - You can use different shades and colors of backgrounds but be professional with those.
+-   Dont put more than 2 charts per slide.
+-   Keep the slides short and concise.
+-   Focus a lot on the wording and make the wording analytical and smart. Imagine being a CEO Presenting to the board.
+
+THIS IS THE ENTIRE SCHEMA YOU CAN USE:
+
+{SCHEMA}
+
+"""
 
 SCRIPT_INSTRUCTIONS = """
 You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
