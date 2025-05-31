@@ -29,7 +29,7 @@ class JobCreateResponse(BaseModel):
 # Define a simple agent to interpret the job request
 job_interpreter_agent = LlmAgent(
     name="JobInterpreterAgent",
-    model="gemini-1.5-flash-latest",
+    model="gemini-2.0-flash-001",
     instruction="""You are a job interpreter. You will receive a 'prompt' (user's request) and 'audiences' (list of target audiences) in session state.
 Your task is to:
 1. Provide a concise summary of what the user wants to achieve.
@@ -53,7 +53,13 @@ async def run_ai_generation(job_id: str, prompt: str, audiences: list[str]):
     )
     runner = Runner(agent=job_interpreter_agent, app_name=APP_NAME, session_service=session_service)
     # Kick off the agent with an initial message
-    initial_message = genai_types.Content(role='user', parts=[genai_types.Part(text="Interpret the job request")])
+    initial_message = genai_types.Content(
+        role='user',
+        parts=[
+            genai_types.Part(text="Interpret the job request"), genai_types.Part(text=f"Prompt: {prompt}"),
+            genai_types.Part(text=f"Audiences: {audiences}")
+        ]
+    )
     async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=initial_message):
         pass  # process events if needed
     # Retrieve the result
@@ -68,7 +74,7 @@ async def create_job(request: JobCreateRequest, background_tasks: BackgroundTask
     """
     Create a new job for generating a presentation.
     """
-    logger.info(f"POST /api/jobs called with prompt={request.prompt}, audiences={request.audiences}")
+    print(f"request={request}")
     job_id = str(uuid.uuid4())
     # Kick off AI generation in background
     background_tasks.add_task(run_ai_generation, job_id, request.prompt, request.audiences)
