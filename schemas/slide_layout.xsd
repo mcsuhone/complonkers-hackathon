@@ -33,7 +33,11 @@
   <xs:complexType name="BaseComponentType">
     <xs:attribute name="id" type="xs:string" use="optional"/>
     <xs:attribute name="placeholder" type="xs:string" use="optional"/>
-    <xs:attribute name="classes" type="xs:string" use="optional"/>
+    <xs:attribute name="classes" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>Space-separated list of Tailwind CSS classes.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
   <!-- Text element with tag type (e.g., h1, p) -->

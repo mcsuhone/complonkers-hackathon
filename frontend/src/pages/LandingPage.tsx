@@ -1,9 +1,20 @@
 import React, { useState } from "react";
 import type { FormEvent } from "react";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, Presentation } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import db from "../db";
-import type { Presentation, Slide } from "../db";
+import { useCreatePresentation } from "@/hooks/usePresentations";
+import type { Presentation as PresentationType } from "@/db";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState("");
@@ -11,6 +22,7 @@ export default function LandingPage() {
   const [audiences, setAudiences] = useState<string[]>([]);
 
   const navigate = useNavigate();
+  const createPresentationMutation = useCreatePresentation();
 
   const handleAddAudience = () => {
     const trimmed = audienceInput.trim();
@@ -20,93 +32,142 @@ export default function LandingPage() {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddAudience();
+    }
+  };
+
   const handleRemoveAudience = (index: number) => {
     setAudiences(audiences.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (audiences.length === 0) return;
-    const id = crypto.randomUUID();
-    const presentation: Presentation = {
-      id,
-      prompt,
+    if (audiences.length === 0 || !prompt.trim()) return;
+
+    const presentation: PresentationType = {
+      id: crypto.randomUUID(),
+      prompt: prompt.trim(),
       audiences,
       createdAt: new Date(),
     };
-    await db.presentations.add(presentation);
-    const slidesToAdd: Slide[] = [];
-    for (let i = 0; i < 5; i++) {
-      slidesToAdd.push({
-        presentationId: id,
-        index: i,
-        content: `Slide ${i + 1}`,
+
+    try {
+      const presentationId = await createPresentationMutation.mutateAsync({
+        presentation,
+        initialSlides: 5,
       });
+      navigate(`/slides/${presentationId}`);
+    } catch (error) {
+      console.error("Error creating presentation:", error);
     }
-    await db.slides.bulkAdd(slidesToAdd);
-    navigate(`/slides/${id}`);
   };
 
   return (
-    <div className="p-4 flex-grow overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-4">Create a New Presentation</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
-        <div>
-          <label className="block mb-1 font-medium">Initial Prompt</label>
-          <textarea
-            className="w-full border rounded p-2"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            required
-          />
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <Presentation className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight mb-2">
+            Create Your Presentation
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Build compelling presentations tailored to your audience
+          </p>
         </div>
-        <div>
-          <label className="block mb-1 font-medium">Audience Tags</label>
-          <div className="flex flex-wrap gap-2">
-            {audiences.map((aud, idx) => (
-              <div
-                key={idx}
-                className="flex items-center bg-gray-200 rounded px-2 py-1"
-              >
-                <span>{aud}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveAudience(idx)}
-                  className="ml-1"
-                >
-                  <Trash size={16} />
-                </button>
+
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Presentation Details</CardTitle>
+            <CardDescription>
+              Provide your initial prompt and target audiences to get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="prompt">Initial Prompt</Label>
+                <Textarea
+                  id="prompt"
+                  placeholder="Describe what you want to present about..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[100px] resize-none"
+                  required
+                />
               </div>
-            ))}
-          </div>
-          <div className="mt-2 flex">
-            <input
-              className="flex-grow border rounded-l p-2"
-              value={audienceInput}
-              onChange={(e) => setAudienceInput(e.target.value)}
-              placeholder="Add audience"
-            />
-            <button
-              type="button"
-              onClick={handleAddAudience}
-              className="bg-blue-500 text-white px-3 rounded-r"
-            >
-              <Plus size={20} />
-            </button>
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={audiences.length === 0}
-          className={`mt-4 px-4 py-2 text-white rounded ${
-            audiences.length === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600"
-          }`}
-        >
-          Create Presentation
-        </button>
-      </form>
+
+              <div className="space-y-3">
+                <Label>Target Audiences</Label>
+                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border rounded-md bg-muted/30">
+                  {audiences.length === 0 ? (
+                    <span className="text-muted-foreground text-sm">
+                      Add at least one audience tag
+                    </span>
+                  ) : (
+                    audiences.map((aud, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        <span>{aud}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveAudience(idx)}
+                        >
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g., Investors, Employees, Board Members"
+                    value={audienceInput}
+                    onChange={(e) => setAudienceInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="flex-grow"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={handleAddAudience}
+                    disabled={!audienceInput.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={
+                  audiences.length === 0 ||
+                  !prompt.trim() ||
+                  createPresentationMutation.isPending
+                }
+                className="w-full"
+                size="lg"
+              >
+                {createPresentationMutation.isPending
+                  ? "Creating..."
+                  : "Create Presentation"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

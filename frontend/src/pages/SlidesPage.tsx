@@ -1,34 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import db from "../db";
-import type { Slide } from "../db";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  useSlides,
+  useCreateSlide,
+  useDeleteSlide,
+  useUpdateSlideContent,
+} from "@/hooks/useSlides";
+import type { Slide } from "@/db";
 
 export default function SlidesPage() {
   const { slidesId } = useParams<{ slidesId: string }>();
-  const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPresenting, setIsPresenting] = useState(false);
 
-  const loadSlides = async () => {
-    if (!slidesId) return [] as Slide[];
-    const arr = await db.slides
-      .where("presentationId")
-      .equals(slidesId)
-      .toArray();
-    arr.sort((a, b) => a.index - b.index);
-    setSlides(arr);
-    return arr;
-  };
+  // React Query hooks
+  const { data: slides = [], isLoading, error } = useSlides(slidesId || "");
+  const createSlideMutation = useCreateSlide();
+  const deleteSlideMutation = useDeleteSlide();
+  const updateSlideContentMutation = useUpdateSlideContent();
 
   useEffect(() => {
-    (async () => {
-      const arr = await loadSlides();
-      if (arr.length > 0) {
-        setCurrentIndex(0);
-      }
-    })();
-  }, [slidesId]);
+    if (slides.length > 0 && currentIndex >= slides.length) {
+      setCurrentIndex(Math.max(0, slides.length - 1));
+    }
+  }, [slides.length, currentIndex]);
 
   const handleAddSlide = async () => {
     if (!slidesId) return;
@@ -39,46 +38,53 @@ export default function SlidesPage() {
       index: newIndex,
       content: `Slide ${newIndex + 1}`,
     };
-    await db.slides.add(newSlide);
-    await loadSlides();
-    setCurrentIndex(newIndex);
+
+    try {
+      await createSlideMutation.mutateAsync(newSlide);
+      setCurrentIndex(newIndex);
+    } catch (error) {
+      console.error("Error creating slide:", error);
+    }
   };
 
   const handleDeleteSlide = async (slideToDelete: Slide) => {
     if (slideToDelete.id == null || !slidesId) return;
-    const removedIndex = slideToDelete.index;
-    await db.transaction("rw", db.slides, async () => {
-      await db.slides.delete(slideToDelete.id!);
-      const laterSlides = await db.slides
-        .where("presentationId")
-        .equals(slidesId)
-        .and((s) => s.index > removedIndex)
-        .toArray();
-      await Promise.all(
-        laterSlides.map((s) => db.slides.update(s.id!, { index: s.index - 1 }))
-      );
-    });
-    const arr = await loadSlides();
-    setCurrentIndex((prev) => {
-      if (arr.length === 0) return 0;
-      if (prev > removedIndex) return prev - 1;
-      if (prev === removedIndex) return Math.min(removedIndex, arr.length - 1);
-      return prev;
-    });
+
+    try {
+      await deleteSlideMutation.mutateAsync({
+        slideId: slideToDelete.id,
+        presentationId: slidesId,
+      });
+
+      // Adjust current index if needed
+      const removedIndex = slideToDelete.index;
+      setCurrentIndex((prev) => {
+        if (slides.length <= 1) return 0;
+        if (prev > removedIndex) return prev - 1;
+        if (prev === removedIndex)
+          return Math.min(removedIndex, slides.length - 2);
+        return prev;
+      });
+    } catch (error) {
+      console.error("Error deleting slide:", error);
+    }
   };
 
   const handleContentChange = async (
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
     const newContent = e.target.value;
-    setSlides((prev) =>
-      prev.map((s) =>
-        s.index === currentIndex ? { ...s, content: newContent } : s
-      )
-    );
     const slide = slides.find((s) => s.index === currentIndex);
+
     if (slide?.id != null) {
-      await db.slides.update(slide.id, { content: newContent });
+      try {
+        await updateSlideContentMutation.mutateAsync({
+          id: slide.id,
+          content: newContent,
+        });
+      } catch (error) {
+        console.error("Error updating slide content:", error);
+      }
     }
   };
 
@@ -124,67 +130,192 @@ export default function SlidesPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-muted-foreground">Loading slides...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-destructive">
+          Error loading slides: {error.message}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="flex flex-col h-full flex-grow">
-        <div className="p-4 flex justify-end">
-          <button
-            onClick={() => setIsPresenting(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Present
-          </button>
-        </div>
-        <div className="flex-grow flex min-h-0">
-          <div className="w-1/4 p-4 border-r overflow-y-auto space-y-2">
-            {slides.map((s) => (
-              <div
-                key={s.id}
-                className={`flex items-center justify-between p-2 border rounded cursor-pointer ${
-                  s.index === currentIndex ? "bg-blue-100" : ""
-                }`}
-                onClick={() => setCurrentIndex(s.index)}
-              >
-                <p className="text-sm truncate">{s.content}</p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteSlide(s);
-                  }}
-                  className="text-red-500"
-                >
-                  <Trash size={14} />
-                </button>
+      <div className="flex flex-col h-full flex-grow bg-background">
+        {/* Header */}
+        <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold">Presentation Editor</h1>
+              <div className="text-sm text-muted-foreground">
+                {slides.length} slide{slides.length !== 1 ? "s" : ""}
               </div>
-            ))}
-            <button
-              onClick={handleAddSlide}
-              className="flex items-center justify-center w-full p-2 text-blue-500 hover:bg-blue-100 rounded"
-            >
-              <Plus size={20} />
-            </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                disabled={currentIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentIndex(Math.min(slides.length - 1, currentIndex + 1))
+                }
+                disabled={currentIndex === slides.length - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => setIsPresenting(true)}
+                disabled={slides.length === 0}
+                className="gap-2"
+              >
+                <Play className="h-4 w-4" />
+                Present
+              </Button>
+            </div>
           </div>
-          <div className="flex-grow p-4 flex flex-col">
+        </div>
+
+        <div className="flex-grow flex min-h-0">
+          {/* Slide Thumbnails */}
+          <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                  Slides
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSlide}
+                  className="gap-1"
+                  disabled={createSlideMutation.isPending}
+                >
+                  <Plus className="h-3 w-3" />
+                  Add
+                </Button>
+              </div>
+
+              {slides.map((s, idx) => (
+                <Card
+                  key={s.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    s.index === currentIndex
+                      ? "ring-2 ring-primary shadow-md"
+                      : "hover:bg-accent/50"
+                  }`}
+                  onClick={() => setCurrentIndex(s.index)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-grow min-w-0">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Slide {idx + 1}
+                        </div>
+                        <p className="text-sm line-clamp-3 break-words">
+                          {s.content || "Empty slide"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSlide(s);
+                        }}
+                        disabled={deleteSlideMutation.isPending}
+                      >
+                        <Trash className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Editor */}
+          <div className="flex-grow p-6 flex flex-col">
             {currentSlide ? (
-              <textarea
-                className="w-full flex-grow border rounded p-2 resize-none min-h-0"
-                value={currentSlide.content}
-                onChange={handleContentChange}
-              />
+              <div className="flex-grow flex flex-col">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-1">
+                    Slide {currentIndex + 1}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Edit your slide content below
+                  </p>
+                </div>
+                <Card className="flex-grow flex flex-col">
+                  <CardContent className="p-4 flex-grow flex flex-col">
+                    <Textarea
+                      value={currentSlide.content}
+                      onChange={handleContentChange}
+                      placeholder="Enter your slide content here..."
+                      className="flex-grow resize-none min-h-0 text-base leading-relaxed"
+                      disabled={updateSlideContentMutation.isPending}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
             ) : (
-              <div>No slides available</div>
+              <div className="flex-grow flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-4">
+                    No slides available
+                  </div>
+                  <Button
+                    onClick={handleAddSlide}
+                    className="gap-2"
+                    disabled={createSlideMutation.isPending}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create your first slide
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Presentation Overlay */}
       {isPresenting && (
         <div
-          className="fixed inset-0 bg-white z-50 flex items-center justify-center p-8 cursor-pointer"
+          className="fixed inset-0 bg-background z-50 flex items-center justify-center p-8 cursor-pointer"
           onClick={handleOverlayClick}
         >
-          <div className="max-w-3xl">
-            <p className="text-3xl">{currentSlide?.content}</p>
+          <div className="max-w-4xl w-full">
+            <div className="bg-card rounded-lg shadow-2xl p-12 min-h-[60vh] flex items-center justify-center">
+              <p className="text-2xl md:text-3xl lg:text-4xl leading-relaxed text-center">
+                {currentSlide?.content || "Empty slide"}
+              </p>
+            </div>
+            <div className="flex items-center justify-center mt-6 gap-4 text-muted-foreground text-sm">
+              <span>
+                Slide {currentIndex + 1} of {slides.length}
+              </span>
+              <span>•</span>
+              <span>Use ← → keys or click to navigate</span>
+              <span>•</span>
+              <span>Press ESC to exit</span>
+            </div>
           </div>
         </div>
       )}
