@@ -58,6 +58,20 @@
   <xs:complexType name="TextType">
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice>
+            <xs:element name="Content" type="xs:string"/>
+            <xs:element name="Instructions" type="xs:string"/>
+          </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+              <xs:enumeration value="instructions"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="tag" type="TextTagType" use="optional" default="p"/>
         <xs:attribute name="textComponentId" type="xs:string" use="optional">
           <xs:annotation>
@@ -72,6 +86,20 @@
   <xs:complexType name="ImageType">
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice>
+            <xs:element name="Content" type="xs:string"/>
+            <xs:element name="Instructions" type="xs:string"/>
+          </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+              <xs:enumeration value="instructions"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="alt" type="xs:string" use="optional"/>
         <xs:attribute name="width" type="xs:string" use="optional"/>
         <xs:attribute name="height" type="xs:string" use="optional"/>
@@ -101,6 +129,20 @@
   <xs:complexType name="ChartType">
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice>
+            <xs:element name="Content" type="xs:string"/>
+            <xs:element name="Instructions" type="xs:string"/>
+          </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+              <xs:enumeration value="instructions"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="type" type="ChartKindType" use="optional"/>
         <xs:attribute name="chartComponentId" type="xs:string" use="optional">
           <xs:annotation>
@@ -115,6 +157,20 @@
   <xs:complexType name="ListType">
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice>
+            <xs:element name="Content" type="xs:string"/>
+            <xs:element name="Instructions" type="xs:string"/>
+          </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+              <xs:enumeration value="instructions"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
       </xs:extension>
     </xs:complexContent>

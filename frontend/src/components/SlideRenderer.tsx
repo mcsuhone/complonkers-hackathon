@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { D3ChartRenderer } from "./D3Charts";
-import { layoutsService, chartsService, textComponentsService } from "@/db";
+import { chartsService, textComponentsService } from "@/db";
+import { useLayout } from "@/hooks/useLayouts";
 import { templateData } from "@/data/presentationTemplate";
 import type { Layout, Chart, TextComponent } from "@/db";
 
@@ -203,80 +204,51 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   slideId,
   className = "",
 }) => {
-  const [layout, setLayout] = useState<Layout | null>(null);
-  const [textComponents, setTextComponents] = useState<
+  // Fetch layout via React Query
+  const {
+    data: layout,
+    isLoading: layoutLoading,
+    error: layoutError,
+  } = useLayout(slideId);
+  const [textComponents, setTextComponents] = React.useState<
     Record<string, TextComponent>
   >({});
-  const [charts, setCharts] = useState<Record<string, Chart>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [charts, setCharts] = React.useState<Record<string, Chart>>({});
 
-  useEffect(() => {
-    const loadSlideData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Load text components and charts once
+  React.useEffect(() => {
+    (async () => {
+      const [allTextComponents, allCharts] = await Promise.all([
+        textComponentsService.getAll(),
+        chartsService.getAll(),
+      ]);
+      setTextComponents(
+        allTextComponents.reduce((acc, tc) => ({ ...acc, [tc.id]: tc }), {})
+      );
+      setCharts(
+        allCharts.reduce((acc, chart) => ({ ...acc, [chart.id]: chart }), {})
+      );
+    })();
+  }, []);
 
-        // Load layout associated with this slideId
-        const layoutData = await layoutsService.getBySlideId(slideId);
-        if (!layoutData) {
-          throw new Error(`Layout not found for slide ${slideId}`);
-        }
-        setLayout(layoutData);
-
-        // Load all text components and charts (for now, we load all)
-        // In a real app, we'd parse the layout XML to find only the referenced ones
-        const [allTextComponents, allCharts] = await Promise.all([
-          textComponentsService.getAll(),
-          chartsService.getAll(),
-        ]);
-
-        // Convert to lookup objects
-        const textComponentsMap = allTextComponents.reduce((acc, tc) => {
-          acc[tc.id] = tc;
-          return acc;
-        }, {} as Record<string, TextComponent>);
-
-        const chartsMap = allCharts.reduce((acc, chart) => {
-          acc[chart.id] = chart;
-          return acc;
-        }, {} as Record<string, Chart>);
-
-        setTextComponents(textComponentsMap);
-        setCharts(chartsMap);
-      } catch (err) {
-        console.error("Error loading slide data:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load slide data"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (slideId) {
-      loadSlideData();
-    }
-  }, [slideId]);
-
-  if (loading) {
+  if (layoutLoading) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="text-center">
           <div className="text-muted-foreground mb-2">⏳</div>
-          <div className="text-sm text-muted-foreground">Loading slide...</div>
+          <div className="text-sm text-muted-foreground">Loading layout...</div>
         </div>
       </div>
     );
   }
 
-  if (error || !layout) {
+  if (layoutError || !layout) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="text-center">
           <div className="text-muted-foreground mb-2">⚠️</div>
           <div className="text-sm text-muted-foreground">
-            {error || "Layout not found"}
+            {layoutError?.message || "Layout not found"}
           </div>
         </div>
       </div>
