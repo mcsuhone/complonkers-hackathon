@@ -5,6 +5,8 @@ import re
 import numpy as np
 
 from agent_utils.run_ai_agent import run_ai_agent
+from agents.deck_architect_agent import get_database_schema
+from agents.data_analyst_agent import get_data_analyst_instructions
 from agents.data_analyst_agent import get_analyst_agent
 from agents.data_analyst_agent import get_sequential_agent
 from redis_utils.redis_stream import publish_message
@@ -219,6 +221,7 @@ async def _run_agent_workflow(
             if np.random.rand() < 0.4:
                 slide_result = placeholder_slop
             else:
+                get_data_analyst_instructions.table_schemas = get_database_schema.table_schemas
                 analyst_agent = get_sequential_agent()
                 slide_result = await run_ai_agent(
                     analyst_agent,  # Reusing interpreter agent for simplicity

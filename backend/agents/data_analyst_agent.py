@@ -91,7 +91,9 @@ def get_data_analyst_instructions():
     # service = DatabaseService(DB_PARAMS)
     # with service as db:
     #     schemas = db.get_table_schemas()
-    schemas = ''
+    schema = os.path.join("..", "..", "agents", "chinook.sql")
+    with open(schema, 'r') as file:
+        schemas = file.read()
 
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 

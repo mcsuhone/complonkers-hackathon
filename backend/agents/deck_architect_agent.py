@@ -50,35 +50,9 @@ class Config:
 
 
 
-
-async def get_database_schema(tool_context: ToolContext) -> Dict[str, Any]:
-    """
-    Fetch database schemas using the configuration from the tool context.
-    
-    Args:
-        tool_context (ToolContext): Context containing database configuration.
-        
-    Returns:
-        Dict[str, Any]: Dictionary containing either schemas or error information.
-            Format: {'schemas': Dict[str, Dict] | 'error': str}
-    """
-    db_config_dict = tool_context.state.get("db_config")
-    
-    if not isinstance(db_config_dict, dict) or not db_config_dict.get("dbname"):
-        return {"error": "Invalid or missing db_config in context"}
-
-    if db_config_dict.get("dbname") in Config.PLACEHOLDER_DBS:
-        return {"schemas": {}, "message": "Placeholder DB, no schema fetched"}
-
-    service = DatabaseService(db_config_dict)
-    with service as db:
-        table_schemas = db.get_table_schemas()
-        return {"schemas": table_schemas}
-
-
-db_schema_tool = FunctionTool(
-    func=get_database_schema
-)
+schema = os.path.join("..", "..", "agents", "chinook.sql")
+with open(schema, 'r') as file:
+    schemas = file.read()
 
 # Agent Prompts
 DECK_ARCHITECT_PROMPT = f"""You are an AI assistant that generates business presentation slide outlines.
@@ -91,12 +65,9 @@ Your primary inputs are:
 Your process is as follows:
 
 1.  **Analyze Database Schema (if `db_config` is provided and not a placeholder):**
-    *   If `db_config` is present and `dbname` is not 'your_db_name' or 'test_db_placeholder':
-        *   Use the `get_database_schema_tool` tool. Provide this tool with the `db_config` dictionary exactly as you received it.
-        *   The tool will return a dictionary which will either contain a `schemas` key with the database schemas or an `error` key if something went wrong.
-    *   If the tool returns an error, or if `db_config` is a placeholder, proceed without specific database insights.
-    *   If you receive schemas:
-        *   **Internally summarize these raw schemas in natural language for your own understanding.** Do NOT output this internal summary. This summary should describe the likely purpose of each table and its key columns based on their names and structure.
+   HERE IS THE DATABASE SCHEMA:
+{schemas}
+    **Internally summarize these raw schemas in natural language for your own understanding.** Do NOT output this internal summary. This summary should describe the likely purpose of each table and its key columns based on their names and structure.
 
 2.  **Generate Slide Outline as XML:**
     *   Based on the `goal`, `context`, and your internal understanding of the database schema (if available and summarized), create an XML document.
@@ -104,7 +75,10 @@ Your process is as follows:
 
 {load_xml_output_schema(Config.SCHEMA_RELATIVE_PATH)}
 
-IMPORTANT: Output ONLY the raw XML string. Do not wrap it in code blocks, JSON, or any other text."""
+IMPORTANT: Output ONLY the raw XML string. Do not wrap it in code blocks, JSON, or any other text.
+
+
+"""
 
 # Initialize the agent
 deck_architect_agent = LlmAgent(
