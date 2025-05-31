@@ -25,6 +25,7 @@
         <xs:element name="Container" type="ContainerType"/>
       </xs:choice>
     </xs:sequence>
+    <!-- The slide identifier from input -->
     <xs:attribute name="id" type="xs:string" use="required"/>
     <xs:attribute name="classes" type="xs:string" use="optional"/>
   </xs:complexType>
