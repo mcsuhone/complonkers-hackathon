@@ -9,9 +9,9 @@ import asyncio
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google.adk.tools import FunctionTool
-from app.services.database_service import DatabaseService
+from services.database_service import DatabaseService
 
-from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool
+from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
 # Database connection parameters
@@ -24,19 +24,26 @@ DB_PARAMS = {
 }
 
 
+db_service = DatabaseService(DB_PARAMS)
+asyncio.run(db_service.connect())
+
+schemas = asyncio.run(db_service.get_table_schemas())
+
+asyncio.run(db_service.close())
+
+
 # --- Step 1: Set up environment variables (Replace with your actual values) ---
 # Ensure you have authenticated with `gcloud auth application-default login`
 # if using Vertex AI. If using Google AI Studio API key, set GOOGLE_API_KEY.
 # For Vertex AI:
-os.environ["GOOGLE_API_KEY"] = "AIzaSyB2_kZ9YSoysyaKyGz51GAAXxQgF3gNnXU"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyCKZyaHsS8rbn9MuCGE9xFg1vzAJQmUgWI"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
 
-MODEL_GEMINI_2_5_FLASH = "gemini-1.5-flash"
+MODEL_GEMINI_2_5_FLASH = "gemini-2.0-flash"
 
 ########################################################
 # DEFINE TOOLS FOR AGENT
 ########################################################
-
 
 DirectoryTool = CrewaiTool(
     tool=DirectoryReadTool(),
@@ -44,15 +51,39 @@ DirectoryTool = CrewaiTool(
     description="Use this to read the contents of a directory.",
 )
 
-FileReadingTool = CrewaiTool(
-    tool=FileReadTool(),
-    name="FileReadTool",
-    description="Use this to read the contents of a file.",
-)
 FileWritingTool = CrewaiTool(
     tool=FileWriterTool(),
     name="FileWriterTool",
     description="Use this to write to a file.",
+)
+
+# New async function for executing SQL queries using the global db_service
+async def execute_sql_query(query: str) -> str:
+    """
+    Executes an SQL query against the Chinook database and returns the results as a string.
+    Manages database connection (connects and closes) for each execution using the global db_service.
+    Args:
+        query: The SQL query string to be executed.
+    Returns:
+        A string representation of the query results or an error message.
+    """
+    try:
+        # The global db_service instance is used here.
+        # async with will call db_service.__aenter__ (connect) and db_service.__aexit__ (close)
+        async with db_service as active_db_service:
+            active_db_service.cursor.execute(query)
+            results = active_db_service.cursor.fetchall()
+            # Convert list of DictRow objects to a string for the LLM
+            return str([dict(row) for row in results])
+    except Exception as e:
+        return f"Error executing query \\'{query}\\': {str(e)}"
+
+
+
+CodeInterpreterTool = CrewaiTool(
+    tool=CodeInterpreterTool(),
+    name="CodeInterpreterTool",
+    description="Use this to run code.",
 )
 
 
@@ -62,26 +93,12 @@ FileWritingTool = CrewaiTool(
 
 # Instructions for the data analyst agent
 DATA_ANALYST_INSTRUCTIONS = """
-You are a highly skilled data analyst agent focused on THEORETICAL analysis planning. Your primary goal is to examine database schemas and propose insightful analyses.
-You have access to the following tools:
-- inspect_schema: Use this to examine the database schema. You can:
-  * Get the full schema (all tables, columns, foreign keys) by calling with an empty query.
-  * Get specific schema information by providing an SQL query (e.g., 'SELECT * FROM information_schema.columns WHERE table_name = \'YourTable\';').
-- DirectoryReadTool: Use this to manage files (e.g., to check for existing analysis scripts or results).
+You are a highly skilled data analyst agent focused on finding insights in the data relevant to the demands of the user. Your primary goal is to examine database schemas you are provided with and propose insightful analyses that are relevant to the user's demands.
 
 Your role is to:
-1. First, use `inspect_schema` with an empty query to understand the overall database structure, including all tables, their columns, and foreign key relationships.
-2. Based on this full schema, identify areas of interest or tables relevant to the user's request.
-3. If needed, use `inspect_schema` again with specific SQL queries to get more detailed information about particular tables or relationships (e.g., using `information_schema` views).
-4. Based on the schema, propose theoretical analyses that could yield valuable insights.
-5. For each analysis, provide visualization suggestions.
-
-When using `inspect_schema`:
-- To get the full overview, call it with an empty string for the query: `inspect_schema(query='')`.
-- For specific details, provide targeted SQL queries. Examples:
-  - `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Album';`
-  - `SELECT constraint_name, unique_constraint_name FROM information_schema.referential_constraints WHERE constraint_schema = 'public' AND table_name = 'Track';`
-- Focus on understanding table structure, column data types, and how tables are related via foreign keys.
+1. Examine the database schemas you are provided with.
+2. Propose analyses that could answer the user's demands.
+3. Output the analysis proposals in a structured manner.
 
 ITERATIVE ANALYSIS PROCESS:
 After each analysis proposal, systematically ask yourself these questions:
@@ -92,7 +109,7 @@ After each analysis proposal, systematically ask yourself these questions:
    - What outliers or special cases might be worth investigating?
 
 2. CORRELATION CHECK:
-   - What relationships between variables might be interesting?
+   - What relationships between variables might be relevant to the user's demands?
    - How could different aspects of the data be combined?
    - What cause-effect relationships should we investigate?
 
@@ -112,48 +129,40 @@ After each analysis proposal, systematically ask yourself these questions:
    - What meaningful ratios or indices could we create?
 
 OUTPUT FORMAT:
-For each analysis, provide:
 1. Analysis Title: Clear, descriptive name
 2. Description: What we want to analyze and why
 3. Required Data: Which tables and columns are needed
-4. Expected Insights: What we hope to learn
+4. Data operations: What operations are needed to enact the analysis
 5. Statistical Methods: What techniques should be used
-6. Business Value: How this analysis helps decision-making
-7. Visualization Suggestions:
-   - Type of visualization (e.g., bar chart, line plot)
-   - Key variables to display
-   - Color schemes or special formatting
-   - Labels and annotations needed
-   - Interactive elements if any
+6. Output a single proposal per demand
 """
 
 SCRIPT_INSTRUCTIONS = """
-You are a highly skilled script writer. Your role is to implement analyses proposed by the analyst agent, stored in the analysis_proposals state key.
+You are a highly skilled script writer. Your role is to implement analyses proposed by the analyst agent, stored in the analysis_proposals state key, and report the results in a JSON file.
 You have access to the following tools:
 - FileWritingTool: Use this to write scripts and save results
 - DirectoryReadTool: Use this to manage files
+- execute_sql_query: Use this to execute SQL queries against the database to gather data and perform operations.
+- CodeInterpreterTool: Use this to run other types of code if SQL is not sufficient (e.g., complex data manipulation in Python after fetching data).
 
 Your responsibilities:
 
-1. SCRIPT GENERATION:
-   - Create a single Python script that implements all proposed analyses
-   - Use SQL queries to write the code for the analyses, but do not run them.
-   - Include proper error handling and data validation
-   - Do not add comments to the code
-   - Do not execute the code, just write it, and save it as 'analysis_script.py' in a results folder
+1. DATA RETRIEVAL AND ANALYSIS:
+   - Preferably, make as few queries and as few scripts as possible.
+   - Primarily, create SQL queries to retrieve and analyze data as per the analysis proposal.
+   - Use the 'execute_sql_query' tool to run these SQL queries.
+   - If an analysis requires complex processing beyond SQL capabilities, you can fetch raw data using 'execute_sql_query' and then use 'CodeInterpreterTool' with Python (e.g., pandas) to perform further processing. However, prefer SQL for direct database operations.
+   - Do not add comments to SQL or Python code unless specifically complex.
 
-2. SCRIPT STRUCTURE:
-   - Import necessary libraries
-   - Perform all analyses sequentially
-   - Handle all potential errors
-   - Make the script reusable for future data
+2. OUTPUT AND STORAGE:
+   - After executing a query or code, save the result as a JSON file.
+   - Use 'FileWritingTool' to save results (e.g., as CSV or text files) in a 'results' directory.
 
-OUTPUT:
-- Use FileWritingTool to write a single script and save it as 'analysis_script.py' in the results folder
-- Script should save all results in the 'results' directory
+OUTPUT FORMAT:
+- Save the results obtained from executing the query/script. Saved to a separate file. Do not save the query/script itself.
+- Ensure all generated files are stored in the 'results' directory.
+- You MUST generate and save a JSON file that contains the data that answers the user's demand, and nothing else. This data could be a table, chart, or even a singular number, but it must be in a JSON format.
 """
-
-
 
 # Define how agents should process and pass data
 analyst_agent = Agent(
@@ -165,7 +174,6 @@ analyst_agent = Agent(
     ),
     description="An AI agent specialized in analyzing database schemas and proposing analyses.",
     instruction=DATA_ANALYST_INSTRUCTIONS,
-    tools=[inspect_schema, DirectoryTool, FileReadingTool],
     output_key="analysis_proposals"
 )
 
@@ -174,7 +182,7 @@ script_agent = Agent(
     model=MODEL_GEMINI_2_5_FLASH,
     description="An AI agent specialized in generating, running, and saving results from scripts.",
     instruction=SCRIPT_INSTRUCTIONS,
-    tools=[FileWritingTool, DirectoryTool, FileReadingTool],
+    tools=[FileWritingTool, DirectoryTool, CodeInterpreterTool, execute_sql_query],
 )
 
 seq_agent = SequentialAgent(
@@ -213,20 +221,6 @@ print(f"Runner created for agent '{runner.agent.name}'.")
 
 from google.genai import types # For creating message Content/Parts
 
-async def execute_analysis():
-    # Create results directory if it doesn't exist
-    if not os.path.exists('results'):
-        os.makedirs('results')
-    
-    # Execute the generated script
-    try:
-        with open('analysis_script.py', 'r') as f:
-            script_content = f.read()
-            exec(script_content)
-        print("Analysis completed successfully. Results saved in 'results' directory.")
-    except Exception as e:
-        print(f"Error executing analysis script: {str(e)}")
-
 async def run_analysis_pipeline(query: str):
     print(f"\nUser: {query}")
     new_message = types.Content(role="user", parts=[types.Part(text=query)])
@@ -239,15 +233,19 @@ async def run_analysis_pipeline(query: str):
             #with open('analysis_proposals.py', 'w') as f:
             #    f.write(final_response_content)
     
-    # Execute the generated analysis script
-    await execute_analysis()
 
     print(f"Agent: {final_response_content}")
 
 # Replace the original chat_with_agent call with the new pipeline
-asyncio.run(run_analysis_pipeline(
-    "I have this music database called chinook. It is composed of multiple tables. I want you to study the data and propose analyses that could yield valuable insights. This is for a study of the music industry. so please find intriguing trends. If you find any analysis ideas, do not ask me for confirmation, just do it."
-))
+
+chat_input = "I have a database whose schema is passed at the end of this message. I want you to study the data and propose analyses that could answer the following demand:"
+
+demand = "Get the percentage of total sales that rock represented in the year 2013"
+
+chat_input += "\n\n Demand: " + demand
+chat_input += "\n\n Schema of the database: " + str(schemas)
+
+asyncio.run(run_analysis_pipeline(chat_input))
 
 
 
