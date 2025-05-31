@@ -2,10 +2,6 @@ import Dexie from "dexie";
 import type { Table } from "dexie";
 
 // Presentation entity
-enum PresentationGeneratedFields {
-  Id = "id",
-}
-
 export interface Presentation {
   id: string;
   prompt: string;
@@ -43,7 +39,7 @@ export interface Slide {
   id?: number;
   presentationId: string;
   index: number;
-  layoutId: string; // Reference to layout instead of embedded XML
+  layoutId: string;
 }
 
 class AppDB extends Dexie {
@@ -55,56 +51,32 @@ class AppDB extends Dexie {
 
   constructor() {
     super("AppDB");
+
+    // Version 1: Complete schema with all tables
     this.version(1).stores({
-      presentations: "id", // Primary key: id
-      slides: "++id, presentationId, index", // Auto-increment id, indexed by presentationId and index
+      presentations: "id, createdAt",
+      slides: "++id, presentationId, index, layoutId",
+      layouts: "id, createdAt",
+      charts: "id, type, createdAt",
+      textComponents: "id, createdAt",
     });
-
-    // Version 2: Migrate from content to componentContent
-    this.version(2)
-      .stores({
-        presentations: "id", // Primary key: id
-        slides: "++id, presentationId, index", // Auto-increment id, indexed by presentationId and index
-      })
-      .upgrade(async (tx) => {
-        // Migrate existing slides from content to componentContent
-        const slides = await tx.table("slides").toArray();
-
-        for (const slide of slides) {
-          // If slide has old content field, migrate it to componentContent
-          if (slide.content && !slide.componentContent) {
-            const componentContent: Record<string, string> = {};
-
-            // Try to extract component IDs from the layout XML and assign the content
-            // For now, we'll create a default component with the content
-            if (slide.content.trim()) {
-              componentContent["default-content"] = slide.content;
-            }
-
-            // Update the slide with componentContent and remove old content field
-            await tx.table("slides").update(slide.id, {
-              componentContent,
-              content: undefined, // Remove the old field
-            });
-          }
-        }
-      });
-
-    // Version 3: Add new tables and migrate to layoutId system
-    this.version(3)
-      .stores({
-        presentations: "id",
-        slides: "++id, presentationId, index, layoutId",
-        layouts: "id",
-        charts: "id, type",
-        textComponents: "id",
-      })
-      .upgrade(async (tx) => {
-        // Migration logic for existing slides will be handled when we implement the new system
-        // For now, we'll just ensure the new tables exist
-      });
   }
 }
 
 const db = new AppDB();
+
+// Add some debugging
+db.open()
+  .then(() => {
+    console.log("Database is ready");
+    console.log("Database version:", db.verno);
+    console.log(
+      "Database tables:",
+      db.tables.map((t) => t.name)
+    );
+  })
+  .catch((error: any) => {
+    console.error("Database initialization error:", error);
+  });
+
 export default db;

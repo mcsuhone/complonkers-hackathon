@@ -43,31 +43,90 @@ export const useCreatePresentation = () => {
 
   return useMutation({
     mutationFn: async ({ presentation }: { presentation: Presentation }) => {
-      // 1. Create presentation
-      await presentationsService.create(presentation);
+      try {
+        console.log("Creating presentation:", presentation);
 
-      // 2. Seed template data into database
-      await Promise.all([
-        layoutsService.createMany(templateLayouts),
-        chartsService.createMany(templateCharts),
-        textComponentsService.createMany(templateTextComponents),
-      ]);
+        // 1. Create presentation
+        await presentationsService.create(presentation);
+        console.log("Presentation created successfully");
 
-      // 3. Create slides with layoutId references
-      const slides: Omit<Slide, "id">[] = templateSlides.map(
-        (slideTemplate) => ({
-          presentationId: presentation.id,
-          index: slideTemplate.index,
-          layoutId: slideTemplate.layoutId,
-        })
-      );
+        // 2. Create unique template data for this presentation
+        console.log("Creating unique template data...");
 
-      await Promise.all(slides.map((slide) => slidesService.create(slide)));
+        // Helper function to update XML references
+        const updateXmlReferences = (xml: string, presentationId: string) => {
+          let updatedXml = xml;
 
-      return presentation;
+          // Update chartId references
+          templateCharts.forEach((chart) => {
+            const oldId = chart.id;
+            const newId = `${presentationId}-${oldId}`;
+            updatedXml = updatedXml.replace(
+              new RegExp(`chartId="${oldId}"`, "g"),
+              `chartId="${newId}"`
+            );
+          });
+
+          // Update textId references
+          templateTextComponents.forEach((textComp) => {
+            const oldId = textComp.id;
+            const newId = `${presentationId}-${oldId}`;
+            updatedXml = updatedXml.replace(
+              new RegExp(`textId="${oldId}"`, "g"),
+              `textId="${newId}"`
+            );
+          });
+
+          return updatedXml;
+        };
+
+        const uniqueLayouts = templateLayouts.map((layout) => ({
+          ...layout,
+          id: `${presentation.id}-${layout.id}`,
+          xml: updateXmlReferences(layout.xml, presentation.id),
+        }));
+
+        const uniqueCharts = templateCharts.map((chart) => ({
+          ...chart,
+          id: `${presentation.id}-${chart.id}`,
+        }));
+
+        const uniqueTextComponents = templateTextComponents.map((textComp) => ({
+          ...textComp,
+          id: `${presentation.id}-${textComp.id}`,
+        }));
+
+        await Promise.all([
+          layoutsService.createMany(uniqueLayouts),
+          chartsService.createMany(uniqueCharts),
+          textComponentsService.createMany(uniqueTextComponents),
+        ]);
+        console.log("Template data seeded successfully");
+
+        // 3. Create slides with layoutId references (using unique layout IDs)
+        const slides: Omit<Slide, "id">[] = templateSlides.map(
+          (slideTemplate) => ({
+            presentationId: presentation.id,
+            index: slideTemplate.index,
+            layoutId: `${presentation.id}-${slideTemplate.layoutId}`,
+          })
+        );
+        console.log("Creating slides:", slides);
+
+        await Promise.all(slides.map((slide) => slidesService.create(slide)));
+        console.log("Slides created successfully");
+
+        return presentation;
+      } catch (error) {
+        console.error("Error in useCreatePresentation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: presentationKeys.all });
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
     },
   });
 };

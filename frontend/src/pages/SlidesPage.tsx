@@ -238,36 +238,35 @@ export const SlidesPage: React.FC = () => {
               <h3 className="font-medium text-sm text-muted-foreground mb-3">
                 Slides
               </h3>
-              {slides.map((slide, index) => (
-                <Card
-                  key={slide.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    index === currentSlideIndex
-                      ? "ring-2 ring-primary shadow-md"
-                      : ""
-                  }`}
-                  onClick={() => setCurrentSlideIndex(index)}
-                >
-                  <CardContent className="p-3">
-                    <div className="aspect-video bg-muted rounded mb-2 overflow-hidden">
-                      <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
-                        <SlideRenderer
-                          layoutId={slide.layoutId}
-                          className="w-full h-full"
-                        />
+              <div className="max-h-[calc(100vh-200px)] overflow-y-auto space-y-2 p-2">
+                {slides.map((slide, index) => (
+                  <Card
+                    key={slide.id}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      index === currentSlideIndex
+                        ? "ring-2 ring-primary shadow-md"
+                        : ""
+                    }`}
+                    onClick={() => setCurrentSlideIndex(index)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="aspect-video bg-muted rounded mb-2 overflow-hidden">
+                        <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
+                          <SlideRenderer
+                            layoutId={slide.layoutId}
+                            className="w-full h-full"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        Slide {index + 1}
-                      </span>
-                      <Badge variant="outline" className="text-xs">
-                        {slide.layoutId.replace("-layout", "")}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          Slide {index + 1}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -280,9 +279,6 @@ export const SlidesPage: React.FC = () => {
                     <h2 className="text-lg font-medium">
                       Slide {currentSlideIndex + 1}
                     </h2>
-                    <Badge variant="outline">
-                      {currentSlide?.layoutId.replace("-layout", "")}
-                    </Badge>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -320,23 +316,6 @@ export const SlidesPage: React.FC = () => {
                         className="w-full h-full"
                       />
                     )}
-                  </div>
-                </div>
-
-                {/* Slide Info */}
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Slide Information</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Layout:</span>
-                      <span className="ml-2 font-mono">
-                        {currentSlide?.layoutId}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Index:</span>
-                      <span className="ml-2">{currentSlide?.index}</span>
-                    </div>
                   </div>
                 </div>
               </CardContent>

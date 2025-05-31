@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidesService } from "@/db";
 import type { Slide } from "@/db";
-import { getRandomLayout } from "@/data/slideLayouts";
 
 // Query keys
 export const slideKeys = {
@@ -35,12 +34,7 @@ export const useCreateSlide = () => {
 
   return useMutation({
     mutationFn: (slide: Omit<Slide, "id">) => {
-      // If no layout is provided, use a random one
-      const slideWithLayout = {
-        ...slide,
-        layout: slide.layout || getRandomLayout(),
-      };
-      return slidesService.create(slideWithLayout);
+      return slidesService.create(slide);
     },
     onSuccess: (_, slide) => {
       // Invalidate slides for this presentation
@@ -51,57 +45,13 @@ export const useCreateSlide = () => {
   });
 };
 
-// Update component content
-export const useUpdateComponentContent = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      componentId,
-      content,
-    }: {
-      id: number;
-      componentId: string;
-      content: string;
-    }) => slidesService.updateComponentContent(id, componentId, content),
-    onSuccess: (_, { id }) => {
-      // Invalidate specific slide
-      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
-      // Also invalidate all slides queries to update the list
-      queryClient.invalidateQueries({ queryKey: slideKeys.all });
-    },
-  });
-};
-
-// Update multiple component contents
-export const useUpdateComponentContents = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      componentContent,
-    }: {
-      id: number;
-      componentContent: Record<string, string>;
-    }) => slidesService.updateComponentContents(id, componentContent),
-    onSuccess: (_, { id }) => {
-      // Invalidate specific slide
-      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
-      // Also invalidate all slides queries to update the list
-      queryClient.invalidateQueries({ queryKey: slideKeys.all });
-    },
-  });
-};
-
 // Update slide layout
 export const useUpdateSlideLayout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, layout }: { id: number; layout: string }) =>
-      slidesService.updateLayout(id, layout),
+    mutationFn: ({ id, layoutId }: { id: number; layoutId: string }) =>
+      slidesService.updateLayoutId(id, layoutId),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide
       queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
@@ -111,7 +61,7 @@ export const useUpdateSlideLayout = () => {
   });
 };
 
-// Update slide (both component content and layout)
+// Update slide
 export const useUpdateSlide = () => {
   const queryClient = useQueryClient();
 
@@ -121,7 +71,7 @@ export const useUpdateSlide = () => {
       updates,
     }: {
       id: number;
-      updates: { componentContent?: Record<string, string>; layout?: string };
+      updates: { layoutId?: string; index?: number };
     }) => slidesService.updateSlide(id, updates),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide

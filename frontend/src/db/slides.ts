@@ -26,39 +26,15 @@ export const slidesService = {
     return await db.slides.get(id);
   },
 
-  // Update component content
-  updateComponentContent: async (
-    id: number,
-    componentId: string,
-    content: string
-  ): Promise<void> => {
-    const slide = await db.slides.get(id);
-    if (slide) {
-      const updatedComponentContent = {
-        ...slide.componentContent,
-        [componentId]: content,
-      };
-      await db.slides.update(id, { componentContent: updatedComponentContent });
-    }
+  // Update slide layout ID
+  updateLayoutId: async (id: number, layoutId: string): Promise<void> => {
+    await db.slides.update(id, { layoutId });
   },
 
-  // Update multiple component contents
-  updateComponentContents: async (
-    id: number,
-    componentContent: Record<string, string>
-  ): Promise<void> => {
-    await db.slides.update(id, { componentContent });
-  },
-
-  // Update slide layout
-  updateLayout: async (id: number, layout: string): Promise<void> => {
-    await db.slides.update(id, { layout });
-  },
-
-  // Update both component content and layout
+  // Update slide with partial updates
   updateSlide: async (
     id: number,
-    updates: { componentContent?: Record<string, string>; layout?: string }
+    updates: { layoutId?: string; index?: number }
   ): Promise<void> => {
     await db.slides.update(id, updates);
   },

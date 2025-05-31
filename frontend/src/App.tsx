@@ -10,7 +10,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/slides/:slidesId" element={<SlidesPage />} />
+          <Route path="/slides/:presentationId" element={<SlidesPage />} />
         </Routes>
       </BrowserRouter>
     </div>
