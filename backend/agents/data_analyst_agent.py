@@ -9,7 +9,7 @@ import asyncio
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google.adk.tools import FunctionTool
-from services.database_service import DatabaseService
+from .services.database_service import DatabaseService
 
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
@@ -24,20 +24,10 @@ DB_PARAMS = {
 }
 
 
-db_service = DatabaseService(DB_PARAMS)
-asyncio.run(db_service.connect())
-
-schemas = asyncio.run(db_service.get_table_schemas())
-
-asyncio.run(db_service.close())
-
-
 # --- Step 1: Set up environment variables (Replace with your actual values) ---
 # Ensure you have authenticated with `gcloud auth application-default login`
 # if using Vertex AI. If using Google AI Studio API key, set GOOGLE_API_KEY.
 # For Vertex AI:
-os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
 
 MODEL_GEMINI_2_5_FLASH = "gemini-2.0-flash"
 
@@ -225,61 +215,71 @@ seq_agent = SequentialAgent(
     sub_agents=[analyst_agent, script_agent]
 )
 
-print(f"Agent '{seq_agent.name}' created using model '{MODEL_GEMINI_2_5_FLASH}'.")
+db_service = DatabaseService(DB_PARAMS)
 
+if __name__ == "__main__":
+    os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
+    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
+    print(f"Agent '{seq_agent.name}' created using model '{MODEL_GEMINI_2_5_FLASH}'.")
 
+    asyncio.run(db_service.connect())
 
-session_service = InMemorySessionService()
+    schemas = asyncio.run(db_service.get_table_schemas())
 
-# Define constants for identifying the interaction context
-APP_NAME = "data_analyst_app"
-USER_ID = "user_1"
-SESSION_ID = "session_001" # Using a fixed ID for simplicity
-
-# Create the specific session where the conversation will happen
-async def create_session():
-    # Create a session (or get existing one)
-    return await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-# Initialize session and runner
-session = asyncio.run(create_session())
-print(f"Session created: App='{APP_NAME}', User='{USER_ID}', Session='{SESSION_ID}'")
-
-# --- Runner ---
-# Key Concept: Runner orchestrates the agent execution loop.
-runner = Runner(
-    agent=seq_agent, # The agent we want to run
-    app_name=APP_NAME,   # Associates runs with our app
-    session_service=session_service # Uses our session manager
-)
-print(f"Runner created for agent '{runner.agent.name}'.")   
-
-from google.genai import types # For creating message Content/Parts
-
-async def run_analysis_pipeline(query: str):
-    print(f"\nUser: {query}")
-    new_message = types.Content(role="user", parts=[types.Part(text=query)])
-
-    # Run the sequential agent
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=new_message):
-        if event.is_final_response() and event.content and event.content.parts:
-            final_response_content = event.content.parts[0].text
-            #final_response_content = final_response_content.replace("```python", "").replace("", "")[:-3]
-            #with open('analysis_proposals.py', 'w') as f:
-            #    f.write(final_response_content)
-
-    print(f"Agent: {final_response_content}")
-
-# Replace the original chat_with_agent call with the new pipeline
-
-chat_input = "We have a database whose schema is passed at the end of this message. I want you to study the data and propose answers to the missing data in the following XML schema:"
-
-xml_file = open('backend/agents/temp.xml', 'r').read()
-
-chat_input += "\n\n XML file: " + xml_file
-chat_input += "\n\n Schema of the database: " + str(schemas)
-
-asyncio.run(run_analysis_pipeline(chat_input))
+    asyncio.run(db_service.close())
+    
+    session_service = InMemorySessionService()
+    
+    # Define constants for identifying the interaction context
+    APP_NAME = "data_analyst_app"
+    USER_ID = "user_1"
+    SESSION_ID = "session_001" # Using a fixed ID for simplicity
+    
+    # Create the specific session where the conversation will happen
+    async def create_session():
+        # Create a session (or get existing one)
+        return await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
+    
+    # Initialize session and runner
+    session = asyncio.run(create_session())
+    print(f"Session created: App='{APP_NAME}', User='{USER_ID}', Session='{SESSION_ID}'")
+    
+    # --- Runner ---
+    # Key Concept: Runner orchestrates the agent execution loop.
+    runner = Runner(
+        agent=seq_agent, # The agent we want to run
+        app_name=APP_NAME,   # Associates runs with our app
+        session_service=session_service # Uses our session manager
+    )
+    print(f"Runner created for agent '{runner.agent.name}'.")   
+    
+    from google.genai import types # For creating message Content/Parts
+    
+    async def run_analysis_pipeline(query: str):
+        print(f"\nUser: {query}")
+        new_message = types.Content(role="user", parts=[types.Part(text=query)])
+    
+        # Run the sequential agent
+        async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=new_message):
+            if event.is_final_response() and event.content and event.content.parts:
+                final_response_content = event.content.parts[0].text
+                #final_response_content = final_response_content.replace("```python", "").replace("", "")[:-3]
+                #with open('analysis_proposals.py', 'w') as f:
+                #    f.write(final_response_content)
+        
+    
+        print(f"Agent: {final_response_content}")
+    
+    # Replace the original chat_with_agent call with the new pipeline
+    
+    chat_input = "We have a database whose schema is passed at the end of this message. I want you to study the data and propose answers to the missing data in the following XML schema:"
+    
+    xml_file = open('backend/agents/temp.xml', 'r').read()
+    
+    chat_input += "\n\n XML file: " + xml_file
+    chat_input += "\n\n Schema of the database: " + str(schemas)
+    
+    asyncio.run(run_analysis_pipeline(chat_input))
 
 
 

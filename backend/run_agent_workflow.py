@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
+from backend.agents.data_analyst_agent import analyst_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.simple_deck_architect_agent import simple_deck_architect_agent
@@ -9,6 +10,7 @@ from json import JSONDecodeError
 from lxml import etree
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def safe_json_dumps(obj):
     try:
@@ -107,6 +109,9 @@ async def _run_agent_workflow(
 
     # Publish architect output
     print(f"Architect result: {architect_result}")  # xml string
+    print('type', type(architect_result))
+    
+    logger.info(f"Architect result through logger")
     await publish_message(subject_id, architect_result)
     
     # 3) Slide idea iteration
@@ -114,13 +119,30 @@ async def _run_agent_workflow(
         parser = etree.XMLParser(remove_blank_text=True)
         ideas_root = etree.fromstring(architect_result.encode('utf-8'), parser)
         ns_ideas = "http://www.complonkers-hackathon/slide_ideas"
-        ns_layout = "http://www.complonkers-hackathon/slide_layout"
-        for slide_idea in ideas_root.findall(f"{{{ns_ideas}}}SlideIdea"):
+        logger.info(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
+        print(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
+        for slide_idea in ideas_root:  # todo replace with xpath or findall
             # Transform slide idea into final Slide XML using naive analyst
-            slide_elem = analyze_slide_idea(slide_idea)
+            print('Processing slide idea:', etree.tostring(slide_idea, encoding='unicode', pretty_print=True))
+            #slide_elem = analyze_slide_idea(slide_idea)
             # Serialize Slide element to string
-            slide_xml = etree.tostring(slide_elem, encoding='unicode', pretty_print=True)
-            await publish_message(subject_id, slide_xml)
+            #slide_xml = etree.tostring(slide_elem, encoding='unicode', pretty_print=True)
+            
+            analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
+            slide_app = "ai_slop"
+            slide_result = await run_ai_agent(
+                analyst_agent,  # Reusing interpreter agent for simplicity
+                subject_id=subject_id,
+                initial_state={"slide_xml": analyst_message},
+                message_parts=[analyst_message],
+                app_name=slide_app
+            )
+            if slide_result is None:
+                logger.error(f"No result from agent {analyst_agent.name} for slide idea in {subject_id}")
+                continue
+            logger.info(f"Slide result: {slide_result}")
+            # Publish each slide result
+            await publish_message(subject_id, slide_result)
     except Exception as e:
         logger.error(f"Error during slide idea iteration: {e}")
 
