@@ -17,6 +17,7 @@
   <!-- Definition of a single slide idea -->
   <xs:complexType name="SlideIdeaType">
     <xs:sequence>
+      <!-- Unique and random identifier for the slide idea -->
       <xs:element name="SlideId" type="xs:string"/>
       <xs:element name="Title" type="xs:string"/>
       <xs:element name="ContentDescription" type="xs:string"/>
