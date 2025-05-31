@@ -3,7 +3,7 @@ import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
 from agents.data_analyst_agent import get_analyst_agent
-from backend.agents.data_analyst_agent import get_sequential_agent
+from agents.data_analyst_agent import get_sequential_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.deck_architect_agent import deck_architect_agent
