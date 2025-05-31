@@ -3,11 +3,12 @@ import logging
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.genai import types as genai_types
+from google.adk.agents import BaseAgent
 
 logger = logging.getLogger(__name__)
 
 async def run_ai_agent(
-    agent,
+    agent: BaseAgent,
     subject_id: str,
     initial_state: dict,
     message_parts: list[str],
@@ -35,8 +36,8 @@ async def run_ai_agent(
     )
 
     # Run the agent to completion
-    async for _ in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=initial_message):
-        pass
+    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=initial_message):
+        print(event)
 
     # Retrieve the result
     final_session = await session_service.get_session(
