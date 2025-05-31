@@ -101,6 +101,18 @@ def get_data_analyst_instructions():
 
     # Instructions for the data analyst agent
     return f"""
+    # Instructions for the data analyst agent
+    Your tasks are:
+    1. Create insightful data analysis based on the 'slide_ideas.xml' and the database schemas provided below.
+    2. Transmit those ideas with instructions to the script_agent. Make sure that the instructions use the actual names from the database schema to reduce confusion. The instructions should have the agent generate a JSON.
+    3. Ensure that you include at least one piece of text and no more than 2 charts in your decision.
+    
+    The schema of the database is:
+    {schemas}
+"""
+
+##In case we prefer this prompt later on
+"""
     You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and the database schemas provided below. Your primary role is to plan the content and data linkages, not to format the final XML, but you MUST use exact database schema names.
 
     # Instructions for the data analyst agent
@@ -212,7 +224,9 @@ def get_data_analyst_instructions():
 def get_script_instructions():
     
 
-    return """
+    return 
+
+"""
     You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
 
     The analyst's plan will be a structured text, with component details separated by '---'. Each component plan will specify:
@@ -268,6 +282,11 @@ def get_sequential_agent():
         name="data_analyst_and_script_agent",
         sub_agents=[get_analyst_agent(), get_script_agent()]
     )
+
+
+########################################################
+# RUN THE AGENT FOR TESTING
+########################################################
 
 if __name__ == "__main__":
     os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
