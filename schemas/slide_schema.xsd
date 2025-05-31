@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="http://www.complonkers-hackathon/slide_layout"
-           xmlns="http://www.complonkers-hackathon/slide_layout"
+           targetNamespace="http://www.complonkers-hackathon/slidedeck"
+           xmlns="http://www.complonkers-hackathon/slidedeck"
            elementFormDefault="qualified">
 
   <!-- Root element for a slide deck -->
@@ -12,11 +12,6 @@
     <xs:sequence>
       <xs:element name="Slide" type="SlideType" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="layoutId" type="xs:string" use="optional">
-      <xs:annotation>
-        <xs:documentation>Reference ID to a layout definition. The layout renderer will use this ID to fetch the corresponding layout definition from the layout registry/store.</xs:documentation>
-      </xs:annotation>
-    </xs:attribute>
   </xs:complexType>
 
   <!-- Definition of a single slide -->

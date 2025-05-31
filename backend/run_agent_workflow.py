@@ -6,7 +6,9 @@ from backend.agents.layout_agent import layout_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.simple_deck_architect_agent import simple_deck_architect_agent
+from backend.agents.naive_analyst_agent import analyze_slide_idea
 from json import JSONDecodeError
+from lxml import etree
 
 logger = logging.getLogger(__name__)
 
@@ -109,20 +111,19 @@ async def _run_agent_workflow(
     print(f"Architect result: {architect_result}")  # xml string
     await publish_message(subject_id, architect_result)
     
-    # 3) Layout Agent
-    message = architect_result
-    layout_result = await run_ai_agent(
-        layout_agent,
-        subject_id=subject_id,
-        initial_state={},
-        message_parts=[message],
-        app_name='fuck_off'
-    )
-    if layout_result is None:
-        print('ERROR')
-        logger.error(f"No result from agent {layout_agent.name} for {subject_id}")
-        return None
-    await publish_message(subject_id, layout_result)
-    print(f'Layout Agent result: {layout_result}')
+    # 3) Slide idea iteration
+    try:
+        parser = etree.XMLParser(remove_blank_text=True)
+        ideas_root = etree.fromstring(architect_result.encode('utf-8'), parser)
+        ns_ideas = "http://www.complonkers-hackathon/slide_ideas"
+        ns_layout = "http://www.complonkers-hackathon/slide_layout"
+        for slide_idea in ideas_root.findall(f"{{{ns_ideas}}}SlideIdea"):
+            # Transform slide idea into final Slide XML using naive analyst
+            slide_elem = analyze_slide_idea(slide_idea)
+            # Serialize Slide element to string
+            slide_xml = etree.tostring(slide_elem, encoding='unicode', pretty_print=True)
+            await publish_message(subject_id, slide_xml)
+    except Exception as e:
+        logger.error(f"Error during slide idea iteration: {e}")
 
     return architect_result
