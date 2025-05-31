@@ -5,7 +5,6 @@ import re
 import numpy as np
 
 from agent_utils.run_ai_agent import run_ai_agent
-from agents.deck_architect_agent import get_database_schema
 from agents.data_analyst_agent import get_data_analyst_instructions
 from agents.data_analyst_agent import get_analyst_agent
 from agents.data_analyst_agent import get_sequential_agent
