@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
-from backend.agents.data_analyst_agent import analyst_agent
+from agents.data_analyst_agent import analyst_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.simple_deck_architect_agent import simple_deck_architect_agent
@@ -85,8 +85,9 @@ async def _run_agent_workflow(
         return None
 
     # Parse and publish interpreter output
+    print(f"Interpreter result: {interpreter_result}")
     parsed_interp = safe_parse_json(interpreter_result)
-    await publish_message(subject_id, interpreter_result)
+    await publish_message(subject_id, str(parsed_interp))
     print(f"Interpreter result: {parsed_interp}")
 
     # 2) Run simple deck architect agent
@@ -111,13 +112,12 @@ async def _run_agent_workflow(
     print(f"Architect result: {architect_result}")  # xml string
     
     logger.info(f"Architect result through logger")
-    await publish_message(subject_id, architect_result)
+    await publish_message(subject_id, str(architect_result))
     
     # 3) Slide idea iteration
     try:
         parser = etree.XMLParser(remove_blank_text=True)
         ideas_root = etree.fromstring(architect_result.encode('utf-8'), parser)
-        ns_ideas = "http://www.complonkers-hackathon/slide_ideas"
         logger.info(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         print(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         for slide_idea in ideas_root:  # todo replace with xpath or findall
@@ -144,5 +144,6 @@ async def _run_agent_workflow(
             await publish_message(subject_id, slide_result)
     except Exception as e:
         logger.error(f"Error during slide idea iteration: {e}")
+
 
     return architect_result

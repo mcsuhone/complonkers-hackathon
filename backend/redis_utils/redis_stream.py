@@ -9,6 +9,7 @@ async def publish_message(job_id: str, message: str) -> None:
     """
     stream_key = f"events:{job_id}"
     # XADD to stream with automatic ID
+    print(f"Publishing message to {stream_key}: {message}")
     await redis_client.xadd(stream_key, {"message": message})
 
 

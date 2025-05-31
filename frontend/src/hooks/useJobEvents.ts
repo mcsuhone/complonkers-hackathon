@@ -18,25 +18,14 @@ export function useJobEvents(jobId: string) {
     );
 
     eventSource.onmessage = async (e) => {
+      console.log(e);
       const text = e.data;
-      console.log("useJobEvents EventSource message:", text);
-      // Unwrap JSON-quoted payload if necessary
-      let payload = text;
-      if (
-        (payload.startsWith('"') && payload.endsWith('"')) ||
-        (payload.startsWith("'") && payload.endsWith("'"))
-      ) {
-        try {
-          payload = JSON.parse(payload);
-          console.log("Debug: Unwrapped payload:", payload);
-        } catch (err) {
-          console.warn("Debug: Failed to unwrap payload, using raw text", err);
-        }
-      }
+      console.log(text);
+      console.log(text);
       // Detect SlideIdeas XML
-      if (payload.trim().startsWith("<SlideIdeas")) {
+      if (text.trim().startsWith("<SlideIdeas")) {
         // Parse and insert SlideIdeas
-        const ideas = parseSlideIdeasXml(payload);
+        const ideas = parseSlideIdeasXml(text);
         console.log("Debug: Parsed SlideIdeas count:", ideas.length);
         // Replace slides for this presentation
         await slidesService.deleteByPresentationId(jobId);
@@ -54,10 +43,10 @@ export function useJobEvents(jobId: string) {
         queryClient.invalidateQueries({
           queryKey: slideKeys.byPresentation(jobId),
         });
-      } else if (payload.trim().startsWith("<SlideDeck")) {
+      } else if (text.trim().startsWith("<SlideDeck")) {
         // Process SlideDeck XML and update slides with content
         try {
-          const layouts = parseSlideLayoutsXml(payload);
+          const layouts = parseSlideLayoutsXml(text);
           console.log("Debug: Parsed SlideDeck layouts count:", layouts.length);
           // Update slide xml content for each slide
           await Promise.all(
@@ -76,10 +65,10 @@ export function useJobEvents(jobId: string) {
       } else {
         // Keep other events for debugging
         try {
-          const data = JSON.parse(payload);
+          const data = JSON.parse(text);
           setEvents((prev) => [...prev, data]);
         } catch {
-          setEvents((prev) => [...prev, payload]);
+          setEvents((prev) => [...prev, text]);
         }
       }
     };
