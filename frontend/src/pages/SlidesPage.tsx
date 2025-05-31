@@ -309,23 +309,28 @@ export const SlidesPage: React.FC = () => {
                         </div>
                       ))}
                     {slides.length > 0 && currentSlide && (
-                      <SlideRenderer
-                        layoutId={currentSlide.layoutId}
-                        className="w-full h-full"
-                      />
+                      <>
+                        <SlideRenderer
+                          layoutId={currentSlide.layoutId}
+                          className="w-full h-full"
+                        />
+                        <div className="p-4 bg-gray-50 border-t border-gray-300 text-left">
+                          <h3 className="text-sm font-medium mb-2 text-gray-900">
+                            Notes
+                          </h3>
+                          <p className="font-semibold mb-1 text-gray-900">
+                            {currentSlide.title}
+                          </p>
+                          <p className="text-sm mb-1 text-gray-900">
+                            {currentSlide.contentDescription}
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {currentSlide.dataInsights}
+                          </p>
+                        </div>
+                      </>
                     )}
                   </div>
-                  {/* Slide Notes (shown when slides exist) */}
-                  {slides.length > 0 && currentSlide && (
-                    <div className="p-4 bg-gray-50">
-                      <h3 className="text-sm font-medium mb-2">Notes</h3>
-                      <p className="font-semibold mb-1">{currentSlide.title}</p>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {currentSlide.contentDescription}
-                      </p>
-                      <p className="text-sm">{currentSlide.dataInsights}</p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
