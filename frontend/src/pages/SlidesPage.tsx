@@ -182,7 +182,7 @@ export const SlidesPage: React.FC = () => {
       <div className="border-b bg-card">
         <div className="mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 py-8">
               <Button
                 variant="ghost"
                 onClick={() => navigate("/")}
@@ -192,8 +192,8 @@ export const SlidesPage: React.FC = () => {
                 Back
               </Button>
               <div>
-                <h1 className="text-xl font-semibold">
-                  {presentation.prompt || "Untitled Presentation"}
+                <h1 className="text-md font-semibold">
+                  {presentation.prompt.split(".")[0] || "Untitled Presentation"}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {slides.length} slide{slides.length !== 1 ? "s" : ""}
@@ -214,125 +214,93 @@ export const SlidesPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Slide Thumbnails */}
-          <div className="lg:col-span-1">
-            <div className="space-y-2">
-              <h3 className="font-medium text-sm text-muted-foreground mb-3">
-                Slides
-              </h3>
-              <div className="max-h-[calc(100vh-200px)] overflow-y-auto space-y-2 p-2">
-                {slides.map((slide, index) => (
-                  <Card
-                    key={slide.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      index === currentSlideIndex
-                        ? "ring-2 ring-primary shadow-md"
-                        : ""
-                    }`}
-                    onClick={() => setCurrentSlideIndex(index)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="aspect-video bg-white rounded mb-2 overflow-hidden">
-                        <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
-                          <SlideRenderer
-                            xml={slide.xml}
-                            className="w-full h-full"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          Slide {index + 1}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Slide View */}
-          <div className="lg:col-span-3">
-            <Card className="h-fit">
-              <CardContent>
-                {/* Slide Header & Controls (hidden when no slides) */}
-                {slides.length > 0 && (
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      <h2 className="text-lg font-medium">
-                        Slide {currentSlideIndex + 1}
-                      </h2>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={prevSlide}
-                        disabled={currentSlideIndex === 0}
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={nextSlide}
-                        disabled={currentSlideIndex === slides.length - 1}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={togglePresentation}
-                      >
-                        <Maximize className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Slide Content or Loading Spinner */}
-                <div className="border rounded-lg overflow-hidden bg-white">
-                  <div className="aspect-video">
-                    {presentationLoading ||
-                      (slidesLoading && (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-muted-foreground text-2xl animate-spin">
-                            <Loader2 className="w-10 h-10" />
-                          </div>
-                        </div>
-                      ))}
-                    {slides.length > 0 && currentSlide && (
-                      <>
+      <div className="mx-auto p-4 grid grid-cols-[1fr_4fr_1fr] gap-4">
+        {/* Slide Thumbnails */}
+        <div className="lg:col-span-1">
+          <div className="space-y-2">
+            <h3 className="font-medium text-sm text-muted-foreground mb-3">
+              Slides
+            </h3>
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto space-y-2 p-2">
+              {slides.map((slide, index) => (
+                <Card
+                  key={slide.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    index === currentSlideIndex
+                      ? "ring-2 ring-primary shadow-md"
+                      : ""
+                  }`}
+                  onClick={() => setCurrentSlideIndex(index)}
+                >
+                  <CardContent className="p-3">
+                    <div className="aspect-video bg-white rounded mb-2 overflow-hidden">
+                      <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
                         <SlideRenderer
-                          xml={currentSlide.xml}
+                          xml={slide.xml}
                           className="w-full h-full"
                         />
-                        <div className="p-4 bg-gray-50 border-t border-gray-300 text-left">
-                          <h3 className="text-sm font-medium mb-2 text-gray-900">
-                            Notes
-                          </h3>
-                          <p className="font-semibold mb-1 text-gray-900">
-                            {currentSlide.notes_title}
-                          </p>
-                          <p className="text-sm mb-1 text-gray-900">
-                            {currentSlide.notes_contentDescription}
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {currentSlide.notes_dataInsights}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        Slide {index + 1}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Main Slide View */}
+        <Card className="h-fit">
+          <CardContent>
+            {/* Slide Content and Notes */}
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Slide panel */}
+              <div className="flex-1 border rounded-lg overflow-hidden bg-white">
+                <div className="aspect-video">
+                  {presentationLoading ||
+                    (slidesLoading && (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-muted-foreground text-2xl animate-spin">
+                          <Loader2 className="w-10 h-10" />
+                        </div>
+                      </div>
+                    ))}
+                  {slides.length > 0 && currentSlide && (
+                    <SlideRenderer
+                      xml={currentSlide.xml}
+                      className="w-full h-full"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            {/* Notes panel */}
+            {slides.length > 0 && currentSlide && (
+              <div className="w-full border rounded-lg bg-gray-50 p-4 flex flex-col">
+                <h3 className="text-sm font-medium mb-2 text-gray-900">
+                  Notes
+                </h3>
+                <p className="font-semibold mb-1 text-gray-900">
+                  {currentSlide.notes_title}
+                </p>
+                <p className="text-sm mb-1 text-gray-900">
+                  {currentSlide.notes_contentDescription}
+                </p>
+                <p className="text-sm text-gray-900">
+                  {currentSlide.notes_dataInsights}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
