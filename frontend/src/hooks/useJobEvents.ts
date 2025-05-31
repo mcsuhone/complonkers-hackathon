@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { slidesService, layoutsService } from "@/db";
+import { slidesService } from "@/db";
 import { useQueryClient } from "@tanstack/react-query";
 import { slideKeys } from "@/hooks/useSlides";
-import { layoutKeys } from "@/hooks/useLayouts";
 import { parseSlideIdeasXml, parseSlideLayoutsXml } from "@/lib/xmlParsers";
 
 /**
@@ -56,25 +55,20 @@ export function useJobEvents(jobId: string) {
           queryKey: slideKeys.byPresentation(jobId),
         });
       } else if (payload.trim().startsWith("<SlideDeck")) {
-        // Process SlideDeck (layout) XML
+        // Process SlideDeck XML and update slides with content
         try {
           const layouts = parseSlideLayoutsXml(payload);
           console.log("Debug: Parsed SlideDeck layouts count:", layouts.length);
-          // Insert layouts
-          const layoutRecords = layouts.map((l) => ({
-            id: l.slideId,
-            slideId: l.slideId,
-            name: l.slideId,
-            xml: l.xml,
-            createdAt: new Date(),
-          }));
-          await layoutsService.createMany(layoutRecords);
-          console.log("Debug: Inserted layouts into DB");
-          // Invalidate for each slideId
-          layouts.forEach((l) => {
-            queryClient.invalidateQueries({
-              queryKey: layoutKeys.bySlideId(l.slideId),
-            });
+          // Update slide xml content for each slide
+          await Promise.all(
+            layouts.map((l) =>
+              slidesService.updateXmlBySlideId(jobId, l.slideId, l.xml)
+            )
+          );
+          console.log("Debug: Updated slide XML for presentation:", jobId);
+          // Invalidate slides data for this presentation
+          queryClient.invalidateQueries({
+            queryKey: slideKeys.byPresentation(jobId),
           });
         } catch (err) {
           console.error("Error processing SlideDeck XML:", err);

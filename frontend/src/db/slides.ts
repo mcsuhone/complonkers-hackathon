@@ -26,15 +26,10 @@ export const slidesService = {
     return await db.slides.get(id);
   },
 
-  // Update slide layout ID
-  updateLayoutId: async (id: number, layoutId: string): Promise<void> => {
-    await db.slides.update(id, { layoutId });
-  },
-
   // Update slide with partial updates
   updateSlide: async (
     id: number,
-    updates: { layoutId?: string; index?: number }
+    updates: { xml?: string; index?: number }
   ): Promise<void> => {
     await db.slides.update(id, updates);
   },
@@ -71,5 +66,18 @@ export const slidesService = {
   // Delete all slides for a presentation
   deleteByPresentationId: async (presentationId: string): Promise<void> => {
     await db.slides.where("presentationId").equals(presentationId).delete();
+  },
+
+  // Add updateXmlBySlideId method to update slide XML by slideId and presentationId
+  updateXmlBySlideId: async (
+    presentationId: string,
+    slideId: string,
+    xml: string
+  ): Promise<void> => {
+    await db.slides
+      .where("presentationId")
+      .equals(presentationId)
+      .and((s) => s.slideId === slideId)
+      .modify({ xml });
   },
 };

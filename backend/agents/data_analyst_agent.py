@@ -267,7 +267,6 @@ async def run_analysis_pipeline(query: str):
             #final_response_content = final_response_content.replace("```python", "").replace("", "")[:-3]
             #with open('analysis_proposals.py', 'w') as f:
             #    f.write(final_response_content)
-    
 
     print(f"Agent: {final_response_content}")
 

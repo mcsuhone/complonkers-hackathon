@@ -127,10 +127,7 @@ export const SlidesPage: React.FC = () => {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full h-full max-w-7xl">
             {currentSlide && (
-              <SlideRenderer
-                slideId={currentSlide.slideId}
-                className="w-full h-full"
-              />
+              <SlideRenderer xml={currentSlide.xml} className="w-full h-full" />
             )}
           </div>
         </div>
@@ -240,7 +237,7 @@ export const SlidesPage: React.FC = () => {
                       <div className="aspect-video bg-muted rounded mb-2 overflow-hidden">
                         <div className="transform scale-[0.2] origin-top-left w-[500%] h-[500%]">
                           <SlideRenderer
-                            slideId={slide.slideId}
+                            xml={slide.xml}
                             className="w-full h-full"
                           />
                         </div>
@@ -311,7 +308,7 @@ export const SlidesPage: React.FC = () => {
                     {slides.length > 0 && currentSlide && (
                       <>
                         <SlideRenderer
-                          slideId={currentSlide.slideId}
+                          xml={currentSlide.xml}
                           className="w-full h-full"
                         />
                         <div className="p-4 bg-gray-50 border-t border-gray-300 text-left">

@@ -1,12 +1,13 @@
 import React from "react";
 import { D3ChartRenderer } from "./D3Charts";
 import { chartsService, textComponentsService } from "@/db";
-import { useLayout } from "@/hooks/useLayouts";
 import { templateData } from "@/data/presentationTemplate";
-import type { Layout, Chart, TextComponent } from "@/db";
+import type { Chart, TextComponent } from "@/db";
 
 interface SlideRendererProps {
-  slideId: string;
+  /** XML string representing the slide content */
+  xml?: string;
+  /** Additional CSS classes */
   className?: string;
 }
 
@@ -201,15 +202,23 @@ const renderComponent = (
 };
 
 export const SlideRenderer: React.FC<SlideRendererProps> = ({
-  slideId,
+  xml,
   className = "",
 }) => {
-  // Fetch layout via React Query
-  const {
-    data: layout,
-    isLoading: layoutLoading,
-    error: layoutError,
-  } = useLayout(slideId);
+  // Early return if xml not provided
+  if (!xml) {
+    return (
+      <div className={`flex items-center justify-center h-64 ${className}`}>
+        <div className="text-center">
+          <div className="text-muted-foreground mb-2">⏳</div>
+          <div className="text-sm text-muted-foreground">
+            Loading slide content...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [textComponents, setTextComponents] = React.useState<
     Record<string, TextComponent>
   >({});
@@ -231,31 +240,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     })();
   }, []);
 
-  if (layoutLoading) {
-    return (
-      <div className={`flex items-center justify-center h-64 ${className}`}>
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">⏳</div>
-          <div className="text-sm text-muted-foreground">Loading layout...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (layoutError || !layout) {
-    return (
-      <div className={`flex items-center justify-center h-64 ${className}`}>
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">⚠️</div>
-          <div className="text-sm text-muted-foreground">
-            {layoutError?.message || "Layout not found"}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const xmlDoc = parseLayoutXML(layout.xml);
+  const xmlDoc = parseLayoutXML(xml);
   if (!xmlDoc) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>

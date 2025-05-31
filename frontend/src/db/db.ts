@@ -9,15 +9,6 @@ export interface Presentation {
   createdAt: Date;
 }
 
-// Layout entity
-export interface Layout {
-  id: string;
-  slideId: string;
-  name: string;
-  xml: string;
-  createdAt: Date;
-}
-
 // Chart entity
 export interface Chart {
   id: string;
@@ -41,6 +32,8 @@ export interface Slide {
   presentationId: string;
   index: number;
   slideId: string;
+  /** XML string containing the slide content */
+  xml?: string;
   title: string;
   contentDescription: string;
   dataInsights: string;
@@ -49,7 +42,6 @@ export interface Slide {
 class AppDB extends Dexie {
   presentations!: Table<Presentation, string>;
   slides!: Table<Slide, number>;
-  layouts!: Table<Layout, string>;
   charts!: Table<Chart, string>;
   textComponents!: Table<TextComponent, string>;
 
@@ -60,7 +52,6 @@ class AppDB extends Dexie {
     this.version(1).stores({
       presentations: "id, createdAt",
       slides: "++id, presentationId, index, slideId",
-      layouts: "id, slideId, createdAt",
       charts: "id, type, createdAt",
       textComponents: "id, createdAt",
     });
