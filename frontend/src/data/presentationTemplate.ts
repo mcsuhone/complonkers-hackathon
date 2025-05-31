@@ -97,7 +97,7 @@ export const templateLayouts: Layout[] = [
 <SlideDeck xmlns="http://www.complonkers-hackathon/slide_layout">
   <Slide id="summary-slide" classes="p-8 bg-gradient-to-br from-orange-50 to-amber-50">
     <Container classes="max-w-6xl mx-auto">
-      <Text tag="h2" classes="text-3xl font-bold text-center mb-8 text-orange-800" textId="summary-title" placeholder="Key Takeaways & Next Steps"/>
+      <Text tag="h2" classes="text-3xl font-bold text-center mb-8 text-orange-800" textId="summary-title" placeholder="Key Takeaways &amp; Next Steps"/>
       <Container classes="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         <Container classes="bg-white p-6 rounded-xl shadow-lg border border-orange-200 text-center">
           <Text tag="h3" classes="text-xl font-semibold mb-4 text-green-700" textId="summary-performance-title" placeholder="📊 Performance Insights"/>

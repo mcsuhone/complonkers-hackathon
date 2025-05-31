@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { D3ChartRenderer } from "./D3ChartRenderer";
+import { D3ChartRenderer } from "./D3Charts";
 import { layoutsService, chartsService, textComponentsService } from "@/db";
 import { templateData } from "@/data/presentationTemplate";
 import type { Layout, Chart, TextComponent } from "@/db";
@@ -141,7 +141,7 @@ const renderComponent = (
         return (
           <D3ChartRenderer
             key={id}
-            chartId={chartId}
+            chartXml={charts[chartId].xml}
             data={chartData}
             className={classes}
           />

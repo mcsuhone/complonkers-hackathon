@@ -273,7 +273,7 @@ export const SlidesPage: React.FC = () => {
           {/* Main Slide View */}
           <div className="lg:col-span-3">
             <Card className="h-fit">
-              <CardContent className="p-6">
+              <CardContent>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <h2 className="text-lg font-medium">
