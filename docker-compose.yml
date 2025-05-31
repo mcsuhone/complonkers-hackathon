@@ -46,7 +46,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     volumes:
-      - postgres_data_v0.1:/var/lib/postgresql/data
+      - postgres_data_v0.2:/var/lib/postgresql/data
     networks:
       - app-network
 
@@ -60,7 +60,7 @@ services:
       - app-network
 
 volumes:
-  postgres_data_v0.1:
+  postgres_data_v0.2:
   redis_data:
 
 networks:

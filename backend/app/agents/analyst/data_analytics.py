@@ -4,59 +4,39 @@ from io import StringIO
 from google.adk.agents import Agent, SequentialAgent
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
-from google.genai import types # For creating message Content/Parts
+from google.genai import types
 import asyncio
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from google.adk.tools import FunctionTool
+from app.services.database_service import DatabaseService
 
-from crewai_tools import CSVSearchTool, FileReadTool, CodeInterpreterTool, DirectoryReadTool, FileWriterTool
+from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool
 from google.adk.tools.crewai_tool import CrewaiTool
+
+# Database connection parameters
+DB_PARAMS = {
+    'dbname': 'chinook',
+    'user': 'postgres',
+    'password': 'postgres',
+    'host': 'localhost', # Assuming your Docker DB is running on localhost
+    'port': '5432'
+}
+
 
 # --- Step 1: Set up environment variables (Replace with your actual values) ---
 # Ensure you have authenticated with `gcloud auth application-default login`
 # if using Vertex AI. If using Google AI Studio API key, set GOOGLE_API_KEY.
 # For Vertex AI:
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDQ3Jc_1TX3v84CVVkK9QeNF-nE_tKzFYM"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyB2_kZ9YSoysyaKyGz51GAAXxQgF3gNnXU"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
 
-MODEL_GEMINI_2_5_FLASH = "gemini-2.5-flash-preview-05-20"
+MODEL_GEMINI_2_5_FLASH = "gemini-1.5-flash"
 
 ########################################################
 # DEFINE TOOLS FOR AGENT
 ########################################################
-CSVTool = CSVSearchTool(
-    config=dict(
-        llm=dict(
-            provider="google",
-            config=dict(
-                model=MODEL_GEMINI_2_5_FLASH, # LLM for summarization/answering within the tool
-            ),
-        ),
-        embedder=dict(
-            provider="google",
-            config=dict(
-                model="models/embedding-001", # Embedding model for vectorizing CSV content
-            ),
-        ),
-    )
-)
 
-CSVTool = CrewaiTool(
-    tool=CSVTool,
-    name="CSVSearchTool",
-    description="Use this to examine CSV file schemas and understand data structure. Input should never be empty.",
-)
-
-CodeTool = CrewaiTool(
-    tool=CodeInterpreterTool(
-        config={
-            "env": {
-                "packages": ["pandas", "numpy"],
-                "python_path": os.path.dirname(os.path.abspath(__file__))
-            }
-        }
-    ),
-    name="CodeInterpreterTool",
-    description="Use this to run Python code for more complex data manipulations or analyses. Be very careful with this tool. If the user asks for advanced analysis or specific calculations not covered by other tools, suggest using Python code.",
-)
 
 DirectoryTool = CrewaiTool(
     tool=DirectoryReadTool(),
@@ -82,23 +62,26 @@ FileWritingTool = CrewaiTool(
 
 # Instructions for the data analyst agent
 DATA_ANALYST_INSTRUCTIONS = """
-You are a highly skilled data analyst agent focused on THEORETICAL analysis planning. Your primary goal is to examine data schemas and propose insightful analyses.
+You are a highly skilled data analyst agent focused on THEORETICAL analysis planning. Your primary goal is to examine database schemas and propose insightful analyses.
 You have access to the following tools:
-- CSVSearchTool: Use this to examine CSV file schemas. IMPORTANT: Always provide specific, non-empty queries about the schema you want to examine (e.g., "Show me the columns in the Album table" or "What are the relationships between tables?")
-- DirectoryReadTool: Use this to discover available data files
-- FileReadTool: Use this to read file contents if needed
+- inspect_schema: Use this to examine the database schema. You can:
+  * Get the full schema (all tables, columns, foreign keys) by calling with an empty query.
+  * Get specific schema information by providing an SQL query (e.g., 'SELECT * FROM information_schema.columns WHERE table_name = \'YourTable\';').
+- DirectoryReadTool: Use this to manage files (e.g., to check for existing analysis scripts or results).
 
 Your role is to:
-1. First use DirectoryReadTool to identify available CSV files
-2. Then use CSVSearchTool with SPECIFIC queries about each file's schema
-3. Based on the schemas, propose theoretical analyses
-4. For each analysis, provide visualization suggestions
+1. First, use `inspect_schema` with an empty query to understand the overall database structure, including all tables, their columns, and foreign key relationships.
+2. Based on this full schema, identify areas of interest or tables relevant to the user's request.
+3. If needed, use `inspect_schema` again with specific SQL queries to get more detailed information about particular tables or relationships (e.g., using `information_schema` views).
+4. Based on the schema, propose theoretical analyses that could yield valuable insights.
+5. For each analysis, provide visualization suggestions.
 
-When using CSVSearchTool:
-- Always provide specific, non-empty queries
-- Focus on understanding table structure and relationships
-- Ask about specific tables or columns
-- Never send empty or vague queries
+When using `inspect_schema`:
+- To get the full overview, call it with an empty string for the query: `inspect_schema(query='')`.
+- For specific details, provide targeted SQL queries. Examples:
+  - `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'Album';`
+  - `SELECT constraint_name, unique_constraint_name FROM information_schema.referential_constraints WHERE constraint_schema = 'public' AND table_name = 'Track';`
+- Focus on understanding table structure, column data types, and how tables are related via foreign keys.
 
 ITERATIVE ANALYSIS PROCESS:
 After each analysis proposal, systematically ask yourself these questions:
@@ -149,31 +132,25 @@ You are a highly skilled script writer. Your role is to implement analyses propo
 You have access to the following tools:
 - FileWritingTool: Use this to write scripts and save results
 - DirectoryReadTool: Use this to manage files
-- FileReadTool: Use this to read analysis proposals
 
 Your responsibilities:
 
 1. SCRIPT GENERATION:
    - Create a single Python script that implements all proposed analyses
-   - Use pandas and numpy effectively
+   - Use SQL queries to write the code for the analyses, but do not run them.
    - Include proper error handling and data validation
    - Do not add comments to the code
-   - Save all results in a 'results' directory
-   - Each analysis result should be saved as a separate CSV file
-   - Use clear, consistent naming for result files
+   - Do not execute the code, just write it, and save it as 'analysis_script.py' in a results folder
 
 2. SCRIPT STRUCTURE:
    - Import necessary libraries
-   - Load all required CSV files
    - Perform all analyses sequentially
-   - Save results with descriptive names
    - Handle all potential errors
    - Make the script reusable for future data
 
 OUTPUT:
-- Generate a single script named 'analysis_script.py'
+- Use FileWritingTool to write a single script and save it as 'analysis_script.py' in the results folder
 - Script should save all results in the 'results' directory
-- Each result file should be named clearly (e.g., 'revenue_by_genre.csv')
 """
 
 
@@ -186,9 +163,9 @@ analyst_agent = Agent(
         temperature=0.5,
         max_output_tokens=1000
     ),
-    description="An AI agent specialized in analyzing data schemas and proposing analyses.",
+    description="An AI agent specialized in analyzing database schemas and proposing analyses.",
     instruction=DATA_ANALYST_INSTRUCTIONS,
-    tools=[CSVTool, DirectoryTool, FileReadingTool],
+    tools=[inspect_schema, DirectoryTool, FileReadingTool],
     output_key="analysis_proposals"
 )
 
@@ -258,6 +235,9 @@ async def run_analysis_pipeline(query: str):
     async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=new_message):
         if event.is_final_response() and event.content and event.content.parts:
             final_response_content = event.content.parts[0].text
+            #final_response_content = final_response_content.replace("```python", "").replace("", "")[:-3]
+            #with open('analysis_proposals.py', 'w') as f:
+            #    f.write(final_response_content)
     
     # Execute the generated analysis script
     await execute_analysis()
@@ -266,7 +246,7 @@ async def run_analysis_pipeline(query: str):
 
 # Replace the original chat_with_agent call with the new pipeline
 asyncio.run(run_analysis_pipeline(
-    "I have this data setup in a folder called chinook_dataset on the root. It is composed of multiple csv files. I want you to load the data and tell me about it. This is for a study of the music industry. so please find intriguing trends. If you find any analysis ideas, do not ask me for confirmation, just do it."
+    "I have this music database called chinook. It is composed of multiple tables. I want you to study the data and propose analyses that could yield valuable insights. This is for a study of the music industry. so please find intriguing trends. If you find any analysis ideas, do not ask me for confirmation, just do it."
 ))
 
 
