@@ -70,9 +70,9 @@ class DatabaseService:
             raise
 
     # Context manager methods to ensure connection is managed properly
-    async def __enter__(self):
-        await self.connect()
+    def __enter__(self):
+        self.connect()
         return self
 
-    async def __exit__(self, exc_type, exc_val, exc_tb):
-        await self.close() 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close() 
