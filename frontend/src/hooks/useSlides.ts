@@ -45,22 +45,6 @@ export const useCreateSlide = () => {
   });
 };
 
-// Update slide layout
-export const useUpdateSlideLayout = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, layoutId }: { id: number; layoutId: string }) =>
-      slidesService.updateLayoutId(id, layoutId),
-    onSuccess: (_, { id }) => {
-      // Invalidate specific slide
-      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
-      // Also invalidate all slides queries to update the list
-      queryClient.invalidateQueries({ queryKey: slideKeys.all });
-    },
-  });
-};
-
 // Update slide
 export const useUpdateSlide = () => {
   const queryClient = useQueryClient();
@@ -71,7 +55,7 @@ export const useUpdateSlide = () => {
       updates,
     }: {
       id: number;
-      updates: { layoutId?: string; index?: number };
+      updates: { xml?: string; index?: number };
     }) => slidesService.updateSlide(id, updates),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide
