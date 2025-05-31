@@ -95,59 +95,41 @@ asyncio.run(db_service.close())
 
 # Instructions for the data analyst agent
 DATA_ANALYST_INSTRUCTIONS = f"""
-You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and database schemas. The database schema is as follows:
+You are a data analyst. Your goal is to help create a data-driven presentation based on 'slide_ideas.xml' and the database schemas provided below. Your primary role is to plan the content and data linkages, not to format the final XML, but you MUST use exact database schema names.
 
+Database Schemas:
 {schemas}
 
-Your tasks are to:
-
-1.  **Understand Demand:** For each 'SlideIdea' in 'slide_ideas.xml', analyze its 'Title', 'ContentDescription', and 'DataInsights'. Strive to uncover the core narrative or question behind each idea.
-2.  **Plan Data Generation & Conceptual Inference:** Consult the provided database schemas. **Diligently explore and creatively interrogate the database** to extract or calculate **genuinely insightful and potentially complex data** that directly addresses the demands and narrative core of each 'SlideIdea'. Don't settle for superficial findings; **actively seek out connections and dig deeper.** 
-    *   Consider the following to deepen your data analysis:
-        *   **Relationships:** Can you join tables to reveal meaningful relationships relevant to the SlideIdea?
-        *   **Calculated Metrics:** Instead of raw numbers, can you calculate percentages, averages, growth rates, ratios, or other derived metrics that provide more insight?
-        *   **Comparisons & Segmentation:** Can you compare different segments of data (e.g., sales across categories, customer behavior over time if applicable, performance between different periods)?
-        *   **Trends:** If date/time information is available, can you identify or instruct the script agent to calculate trends or changes over periods?
-    *   **Conceptual Inference (Permitted):** While you must **never invent specific data figures or facts** not supported by the database, you ARE allowed and encouraged to infer less tangible concepts such as a company's mission, goals, strategic motivations, or market positioning if these can be reasonably derived from the textual content of the input 'slide_ideas.xml' (e.g., `Title`, `ContentDescription`) and/or are supported by patterns or insights from the actual data analysis. Use these inferences to shape the narrative instructions for the script_agent.
-    *   **Persevere:** If an initial line of inquiry for a `SlideIdea` doesn't immediately yield strong results, try to think of alternative data points or analytical angles that could still illuminate the core theme of the `SlideIdea`. The goal is to find the best possible data-backed story.
-    Aim for analyses that go beyond simple aggregations if the 'SlideIdea' suggests a need for deeper understanding. However, ensure all proposed data-driven analyses are achievable by the script_agent using SQL queries and Python-based data manipulation.
-3.  **Instruct Script Agent:**
-    *   If, after your diligent exploration, you identify a way to generate relevant data for a 'SlideIdea' (and potentially related conceptual inferences):
-        *   For textual content: Instruct the script_agent on what data to find/calculate (including any complex logic) and how it should be used, along with any inferred conceptual elements, to create text that fulfills the 'SlideIdea'. Propose a `<Text>` component.
-        *   For visualizations: Instruct the script_agent on (a) what data to prepare for a chart that fulfills the 'SlideIdea' (this data might be the result of a complex query or calculation), and (b) a clear visualization goal/instruction for that data. This visualization goal must also explicitly state that the `visualizer_tool` should include the input data (the data used to generate the chart) within its output XML, ideally in a structured data section. State that the `script_agent` must use its `visualizer_tool`, passing it both the prepared data and this comprehensive visualization goal/instruction. Propose a `<Chart>` component.
-    *   **Only after thorough and creative attempts to find relevant data and conceptual links prove unsuccessful** should you omit components for a `SlideIdea`.
-4.  **Output Requirement:** Your sole output MUST be a single XML string. This XML string must comprehensively address the demands of the input 'slide_ideas.xml' by including components for all `SlideIdea`s that can be substantiated with data and reasonable inferences through diligent analysis. The output must conform to 'slide_schema.xsd', containing only the `<Text>` and `<Chart>` components (within `<Slide>` and `<SlideDeck>`) for which you've provided instructions.
-
-Example of instructing for a `<Chart>`:
-'<Chart><Content>1. Data to prepare: Calculate monthly sales growth rate for the last 12 months by joining 'invoices' and 'invoice_items', then summing totals per month and calculating percentage change. Output as JSON: [{{'month': 'YYYY-MM', 'growth_rate': 0.XX}}, ...]. 2. Visualization goal for visualizer_tool: Create a line chart showing monthly sales growth rate. Crucially, the output XML from visualizer_tool must include the input JSON data within a designated data section inside the chart XML. 3. Action: Use visualizer_tool, providing it with the prepared data and this comprehensive visualization goal.</Content></Chart>'
-
-Example of instructing for a `<Text>`:
-'<Text><Content>1. Data: Find the top 3 selling artists and their total revenue. Infer from SlideIdea Title ("Market Dominance") that the company aims to highlight its leading position. 2. Text: Create a statement like: "Our strong market dominance is evidenced by our top performers: [Artist1] ([Revenue1]), [Artist2] ([Revenue2]), and [Artist3] ([Revenue3]), showcasing significant sales leadership." using the fetched data and the inferred theme.</Content></Text>'
-"""
+Your tasks are:
+1. Create insightful data analysis based on the 'slide_ideas.xml' and the database schemas provided above.
+2. Transmit those ideas with instructions to the script_agent. Make sure that the instructions use the actual names from the database schema to reduce confusion. The instructions should have the agent generate a JSON.
+3. Ensure that you include at least one piece of text in your decision as a slide is likely to require it"""
 
 SCRIPT_INSTRUCTIONS = """
-You are a script writer. You will receive an XML string ('slide_schema.xml') from the analyst_agent, which defines the structure of a presentation. Your task is to populate this XML with data by processing its components.
+You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
 
-The 'slide_schema.xml' you need to process is:
-```xml
-{+analysis_proposals}
-```
+The analyst's plan will be a structured text, with component details separated by '---'. Each component plan will specify:
+*   `SlideId`
+*   `ComponentType` (`Text` or `Chart`)
+*   `InstructionsForContent` (details for data fetching/processing using exact schema names, text construction, or chart data prep to JSON and visualization goal)
 
-Your main tasks are:
-1.  **Input Processing:** Parse the 'slide_schema.xml' provided above. If the provided XML is empty or invalid, you might not be able to proceed.
-2.  **Component Execution:** For each `<Text>` and `<Chart>` component found in the parsed XML:
-    *   Read the specific instructions for that component, located within its `<Content>` tag.
-    *   Use your available tools (`execute_sql_query`, `CodeInterpreterTool`) to write and execute the necessary code (SQL, Python) to generate or fetch the data as per the analyst's instructions for that component.
-    *   **For `<Text>` components:**
-        *   Based on the analyst's guidance, generate the final text string, ensuring it incorporates the fetched data and aligns with the original 'SlideIdea's' purpose.
-        *   Replace the original instructions in the `<Content>` tag with this final generated text.
-    *   **For `<Chart>` components:**
-        *   The analyst's instructions will specify (a) the data to prepare and (b) a visualization goal/instruction.
-        *   Prepare the data as instructed.
-        *   Use your `visualizer_tool`, passing it BOTH the prepared data AND the analyst-provided visualization goal/instruction, to generate the chart XML.
-        *   Replace the original instructions in the `<Content>` tag with the complete, CDATA-wrapped XML output from `visualizer_tool`.
-3.  **Error Handling Protocol:** If you encounter an unrecoverable error while processing any specific component (e.g., data cannot be generated as instructed, a required tool fails for that component), that ENTIRE component (the full XML block, for instance, `<Text ...>...</Text>` or `<Chart ...>...</Chart>`) MUST BE OMITTED from your final XML output. Do not include error messages in place of content.
-4.  **Output Mandate:** Your SOLE and FINAL output for this task MUST be a single, valid XML string. This string represents the fully populated 'slide_schema.xml', containing only the successfully processed (or appropriately modified) components, and must conform to the 'slide_schema.xsd' structure. If no components are successfully processed, the output might be a minimal valid XML structure like an empty SlideDeck or as appropriate based on the schema.
+Your tasks:
+1.  **Parse Analyst's Plan:** Interpret the structured text from `{+analysis_proposals}` to identify each planned component and its details.
+2.  **Construct SlideDeck XML:** You will build the entire XML structure (`<SlideDeck>`, `<Slide id="...">`, `<Text ...>`, `<Chart ...>`) according to `slide_schema.xsd`.
+3.  **Execute and Populate Content:** For each component planned by the analyst:
+    *   Create the appropriate XML element (e.g., `<Text tag="p">` or `<Chart type="bar">`). Assign classes or other attributes as appropriate or default.
+    *   Read the `InstructionsForContent`.
+    *   Use your tools (`execute_sql_query`, `CodeInterpreterTool`) to perform the data operations (SQL queries, Python calculations) specified by the analyst, **expecting exact schema names in those instructions.**
+    *   **For `Text` components:**
+        *   Generate the final text string as per `InstructionsForContent`.
+        *   Place this text inside the `<Content>` tag of the `<Text>` element you created.
+    *   **For `Chart` components:**
+        *   Execute data preparation to **JSON format** as per `InstructionsForContent`.
+        *   Use your `visualizer_tool`, passing it BOTH the prepared JSON data AND the visualization goal/description from `InstructionsForContent`.
+        *   Ensure the `visualizer_tool`'s output XML (which should include the data) is complete. Place this entire CDATA-wrapped XML output from `visualizer_tool` inside the `<Content>` tag of the `<Chart>` element you created.
+    *   Add the fully formed component XML to the correct `<Slide id="...">` within your overall `<SlideDeck>` structure.
+4.  **Error Handling:** If any step in processing a specific planned component fails (e.g., data generation error, `visualizer_tool` error), that entire component (the one you were trying to build) MUST BE OMITTED from the final `slide_schema.xml`. Continue to process other planned components.
+5.  **Output Requirement:** Your SOLE and FINAL output MUST be a single, valid XML string, representing the complete `slide_schema.xml`. This XML must contain all successfully processed components, correctly structured according to `slide_schema.xsd`.
 
 """
 
@@ -238,7 +220,7 @@ if __name__ == "__main__":
     
     
     
-    xml_file = open('backend/agents/temp.xml', 'r').read()
+    xml_file = open('backend/agents/temp copy.xml', 'r').read()
     
     asyncio.run(run_analysis_pipeline(xml_file))
 
