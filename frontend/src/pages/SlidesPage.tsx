@@ -10,6 +10,7 @@ import {
   useDeleteSlide,
   useUpdateSlideContent,
 } from "@/hooks/useSlides";
+import SlideRenderer from "@/components/SlideRenderer";
 import type { Slide } from "@/db";
 
 export default function SlidesPage() {
@@ -37,6 +38,7 @@ export default function SlidesPage() {
       presentationId: slidesId,
       index: newIndex,
       content: `Slide ${newIndex + 1}`,
+      layout: "", // Will be filled with random layout by the hook
     };
 
     try {
@@ -224,12 +226,19 @@ export default function SlidesPage() {
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-grow min-w-0">
-                        <div className="text-xs text-muted-foreground mb-1">
+                        <div className="text-xs text-muted-foreground mb-2">
                           Slide {idx + 1}
                         </div>
-                        <p className="text-sm line-clamp-3 break-words">
-                          {s.content || "Empty slide"}
-                        </p>
+                        {/* Render slide preview using SlideRenderer */}
+                        <div className="h-20 overflow-hidden rounded border bg-background">
+                          <div className="scale-[0.15] origin-top-left w-[533px] h-[400px]">
+                            <SlideRenderer
+                              layoutXml={s.layout}
+                              content={s.content}
+                              isPresentation={false}
+                            />
+                          </div>
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
@@ -251,28 +260,50 @@ export default function SlidesPage() {
           </div>
 
           {/* Main Editor */}
-          <div className="flex-grow p-6 flex flex-col">
+          <div className="flex-grow flex min-h-0">
             {currentSlide ? (
-              <div className="flex-grow flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-1">
-                    Slide {currentIndex + 1}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Edit your slide content below
-                  </p>
+              <div className="flex w-full">
+                {/* Slide Preview */}
+                <div className="flex-1 p-6 border-r">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-1">
+                      Slide {currentIndex + 1} Preview
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Live preview of your slide layout
+                    </p>
+                  </div>
+                  <Card className="h-[500px] overflow-hidden">
+                    <CardContent className="p-0 h-full">
+                      <SlideRenderer
+                        layoutXml={currentSlide.layout}
+                        content={currentSlide.content}
+                        isPresentation={false}
+                      />
+                    </CardContent>
+                  </Card>
                 </div>
-                <Card className="flex-grow flex flex-col">
-                  <CardContent className="p-4 flex-grow flex flex-col">
-                    <Textarea
-                      value={currentSlide.content}
-                      onChange={handleContentChange}
-                      placeholder="Enter your slide content here..."
-                      className="flex-grow resize-none min-h-0 text-base leading-relaxed"
-                      disabled={updateSlideContentMutation.isPending}
-                    />
-                  </CardContent>
-                </Card>
+
+                {/* Content Editor */}
+                <div className="w-80 p-6 flex flex-col">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-1">Content Editor</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Edit your slide content
+                    </p>
+                  </div>
+                  <Card className="flex-grow flex flex-col">
+                    <CardContent className="p-4 flex-grow flex flex-col">
+                      <Textarea
+                        value={currentSlide.content}
+                        onChange={handleContentChange}
+                        placeholder="Enter your slide content here..."
+                        className="flex-grow resize-none min-h-0 text-base leading-relaxed"
+                        disabled={updateSlideContentMutation.isPending}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             ) : (
               <div className="flex-grow flex items-center justify-center">
@@ -296,26 +327,26 @@ export default function SlidesPage() {
       </div>
 
       {/* Presentation Overlay */}
-      {isPresenting && (
+      {isPresenting && currentSlide && (
         <div
           className="fixed inset-0 bg-background z-50 flex items-center justify-center p-8 cursor-pointer"
           onClick={handleOverlayClick}
         >
-          <div className="max-w-4xl w-full">
-            <div className="bg-card rounded-lg shadow-2xl p-12 min-h-[60vh] flex items-center justify-center">
-              <p className="text-2xl md:text-3xl lg:text-4xl leading-relaxed text-center">
-                {currentSlide?.content || "Empty slide"}
-              </p>
-            </div>
-            <div className="flex items-center justify-center mt-6 gap-4 text-muted-foreground text-sm">
-              <span>
-                Slide {currentIndex + 1} of {slides.length}
-              </span>
-              <span>•</span>
-              <span>Use ← → keys or click to navigate</span>
-              <span>•</span>
-              <span>Press ESC to exit</span>
-            </div>
+          <div className="max-w-6xl w-full h-full flex items-center justify-center">
+            <SlideRenderer
+              layoutXml={currentSlide.layout}
+              content={currentSlide.content}
+              isPresentation={true}
+            />
+          </div>
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 text-muted-foreground text-sm bg-background/80 backdrop-blur px-4 py-2 rounded-full">
+            <span>
+              Slide {currentIndex + 1} of {slides.length}
+            </span>
+            <span>•</span>
+            <span>Use ← → keys or click to navigate</span>
+            <span>•</span>
+            <span>Press ESC to exit</span>
           </div>
         </div>
       )}

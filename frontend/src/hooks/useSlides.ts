@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { slidesService } from "@/db";
 import type { Slide } from "@/db";
+import { getRandomLayout } from "@/data/slideLayouts";
 
 // Query keys
 export const slideKeys = {
@@ -33,7 +34,14 @@ export const useCreateSlide = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: slidesService.create,
+    mutationFn: (slide: Omit<Slide, "id">) => {
+      // If no layout is provided, use a random one
+      const slideWithLayout = {
+        ...slide,
+        layout: slide.layout || getRandomLayout(),
+      };
+      return slidesService.create(slideWithLayout);
+    },
     onSuccess: (_, slide) => {
       // Invalidate slides for this presentation
       queryClient.invalidateQueries({
@@ -50,6 +58,43 @@ export const useUpdateSlideContent = () => {
   return useMutation({
     mutationFn: ({ id, content }: { id: number; content: string }) =>
       slidesService.updateContent(id, content),
+    onSuccess: (_, { id }) => {
+      // Invalidate specific slide
+      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
+      // Also invalidate all slides queries to update the list
+      queryClient.invalidateQueries({ queryKey: slideKeys.all });
+    },
+  });
+};
+
+// Update slide layout
+export const useUpdateSlideLayout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, layout }: { id: number; layout: string }) =>
+      slidesService.updateLayout(id, layout),
+    onSuccess: (_, { id }) => {
+      // Invalidate specific slide
+      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
+      // Also invalidate all slides queries to update the list
+      queryClient.invalidateQueries({ queryKey: slideKeys.all });
+    },
+  });
+};
+
+// Update slide (both content and layout)
+export const useUpdateSlide = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: number;
+      updates: { content?: string; layout?: string };
+    }) => slidesService.updateSlide(id, updates),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide
       queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });

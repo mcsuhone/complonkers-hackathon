@@ -19,6 +19,7 @@ export interface Slide {
   presentationId: string;
   index: number;
   content: string;
+  layout: string; // XML layout string adhering to slide_layout.xsd
 }
 
 class AppDB extends Dexie {

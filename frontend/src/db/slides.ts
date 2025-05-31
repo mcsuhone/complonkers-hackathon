@@ -31,6 +31,19 @@ export const slidesService = {
     await db.slides.update(id, { content });
   },
 
+  // Update slide layout
+  updateLayout: async (id: number, layout: string): Promise<void> => {
+    await db.slides.update(id, { layout });
+  },
+
+  // Update both content and layout
+  updateSlide: async (
+    id: number,
+    updates: { content?: string; layout?: string }
+  ): Promise<void> => {
+    await db.slides.update(id, updates);
+  },
+
   // Update slide index
   updateIndex: async (id: number, index: number): Promise<void> => {
     await db.slides.update(id, { index });

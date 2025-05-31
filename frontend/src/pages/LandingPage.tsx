@@ -57,7 +57,6 @@ export default function LandingPage() {
     try {
       const presentationId = await createPresentationMutation.mutateAsync({
         presentation,
-        initialSlides: 5,
       });
       navigate(`/slides/${presentationId}`);
     } catch (error) {

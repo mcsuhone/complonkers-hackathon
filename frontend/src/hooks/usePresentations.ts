@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { presentationsService, slidesService } from "@/db";
 import type { Presentation, Slide } from "@/db";
+import { getLayoutByType } from "@/data/slideLayouts";
 
 // Query keys
 export const presentationKeys = {
@@ -30,25 +31,32 @@ export const useCreatePresentation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      presentation,
-      initialSlides = 5,
-    }: {
-      presentation: Presentation;
-      initialSlides?: number;
-    }) => {
+    mutationFn: async ({ presentation }: { presentation: Presentation }) => {
       // Create presentation
       await presentationsService.create(presentation);
 
-      // Create initial slides
-      const slides: Omit<Slide, "id">[] = [];
-      for (let i = 0; i < initialSlides; i++) {
-        slides.push({
+      // Create 3 initial slides with hardcoded XML layouts
+      const slides: Omit<Slide, "id">[] = [
+        {
           presentationId: presentation.id,
-          index: i,
-          content: `Slide ${i + 1}`,
-        });
-      }
+          index: 0,
+          content: "Title Slide",
+          layout: getLayoutByType("title"),
+        },
+        {
+          presentationId: presentation.id,
+          index: 1,
+          content: "Content Slide",
+          layout: getLayoutByType("content"),
+        },
+        {
+          presentationId: presentation.id,
+          index: 2,
+          content: "Chart Slide",
+          layout: getLayoutByType("chart"),
+        },
+      ];
+
       await slidesService.createMany(slides);
 
       return presentation.id;
