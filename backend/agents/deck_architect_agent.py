@@ -71,8 +71,8 @@ async def get_database_schema(tool_context: ToolContext) -> Dict[str, Any]:
         return {"schemas": {}, "message": "Placeholder DB, no schema fetched"}
 
     service = DatabaseService(db_config_dict)
-    async with service as db:
-        table_schemas = await db.get_table_schemas()
+    with service as db:
+        table_schemas = db.get_table_schemas()
         return {"schemas": table_schemas}
 
 

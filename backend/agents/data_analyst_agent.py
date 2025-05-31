@@ -87,11 +87,11 @@ CodeInterpreterTool = CrewaiTool(
 def get_data_analyst_instructions():
     db_service = DatabaseService(DB_PARAMS)
 
-    asyncio.run(db_service.connect())
+    db_service.connect()
 
-    schemas = asyncio.run(db_service.get_table_schemas())
+    schemas = db_service.get_table_schemas()
 
-    asyncio.run(db_service.close())
+    db_service.close()
 
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 

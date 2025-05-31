@@ -7,7 +7,7 @@ class DatabaseService:
         self.connection = None
         self.cursor = None
 
-    async def connect(self):
+    def connect(self):
         if not self.connection or self.connection.closed:
             try:
                 self.connection = psycopg2.connect(
@@ -23,7 +23,7 @@ class DatabaseService:
                 print(f"Error connecting to PostgreSQL via DatabaseService: {e}")
                 raise
 
-    async def close(self):
+    def close(self):
         if self.cursor:
             self.cursor.close()
             self.cursor = None # Clear cursor after closing
@@ -32,7 +32,7 @@ class DatabaseService:
             self.connection = None # Clear connection after closing
             print("PostgreSQL connection closed by DatabaseService.")
 
-    async def get_table_schemas(self) -> dict:
+    def get_table_schemas(self) -> dict:
         """
         Retrieves the schema (column names and types) for all tables in the public schema.
         """
@@ -70,9 +70,9 @@ class DatabaseService:
             raise
 
     # Context manager methods to ensure connection is managed properly
-    async def __aenter__(self):
-        await self.connect()
+    def __enter__(self):
+        self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close() 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close() 
