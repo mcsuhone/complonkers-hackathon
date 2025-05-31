@@ -87,13 +87,9 @@ CodeInterpreterTool = CrewaiTool(
 ########################################################
 
 def get_data_analyst_instructions():
-    db_service = DatabaseService(DB_PARAMS)
-
-    db_service.connect()
-
-    schemas = db_service.get_table_schemas()
-
-    db_service.close()
+    service = DatabaseService(DB_PARAMS)
+    with service as db:
+        schemas = db.get_table_schemas()
 
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 
