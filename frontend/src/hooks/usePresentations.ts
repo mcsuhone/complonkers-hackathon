@@ -1,12 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  presentationsService,
-  slidesService,
-  layoutsService,
-  chartsService,
-  textComponentsService,
-} from "@/db";
-import type { Presentation, Slide } from "@/db";
+import { presentationsService, slidesService } from "@/db";
+import type { Presentation } from "@/db";
 
 // Query keys
 export const presentationKeys = {

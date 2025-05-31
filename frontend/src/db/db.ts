@@ -34,9 +34,12 @@ export interface Slide {
   slideId: string;
   /** XML string containing the slide content */
   xml?: string;
-  title: string;
-  contentDescription: string;
-  dataInsights: string;
+  /** Slide notes title */
+  notes_title: string;
+  /** Slide notes content description */
+  notes_contentDescription: string;
+  /** Slide notes data insights */
+  notes_dataInsights: string;
 }
 
 class AppDB extends Dexie {

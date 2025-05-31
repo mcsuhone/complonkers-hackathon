@@ -5,7 +5,6 @@ from agent_utils.run_ai_agent import run_ai_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.simple_deck_architect_agent import simple_deck_architect_agent
-from backend.agents.naive_analyst_agent import analyze_slide_idea
 from json import JSONDecodeError
 from lxml import etree
 
