@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from jobs_router import router as jobs_router
 
 app = FastAPI(
     title="FastAPI Backend",
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include job creation and event streaming routes
+app.include_router(jobs_router)
 
 @app.get("/")
 async def root():
