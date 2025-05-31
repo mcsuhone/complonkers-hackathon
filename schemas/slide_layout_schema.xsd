@@ -59,16 +59,12 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:sequence>
-          <xs:choice>
-            <xs:element name="Content" type="xs:string"/>
-            <xs:element name="Instructions" type="xs:string"/>
-          </xs:choice>
+          <xs:element name="Content" type="xs:string"/>
         </xs:sequence>
         <xs:attribute name="mode" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">
               <xs:enumeration value="content"/>
-              <xs:enumeration value="instructions"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
@@ -87,16 +83,12 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:sequence>
-          <xs:choice>
-            <xs:element name="Content" type="xs:string"/>
-            <xs:element name="Instructions" type="xs:string"/>
-          </xs:choice>
+          <xs:element name="Content" type="xs:string"/>
         </xs:sequence>
         <xs:attribute name="mode" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">
               <xs:enumeration value="content"/>
-              <xs:enumeration value="instructions"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
@@ -130,16 +122,12 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:sequence>
-          <xs:choice>
-            <xs:element name="Content" type="xs:string"/>
-            <xs:element name="Instructions" type="xs:string"/>
-          </xs:choice>
+          <xs:element name="Content" type="xs:string"/>
         </xs:sequence>
         <xs:attribute name="mode" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">
               <xs:enumeration value="content"/>
-              <xs:enumeration value="instructions"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
@@ -158,16 +146,12 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:sequence>
-          <xs:choice>
-            <xs:element name="Content" type="xs:string"/>
-            <xs:element name="Instructions" type="xs:string"/>
-          </xs:choice>
+          <xs:element name="Content" type="xs:string"/>
         </xs:sequence>
         <xs:attribute name="mode" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">
               <xs:enumeration value="content"/>
-              <xs:enumeration value="instructions"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
