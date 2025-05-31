@@ -9,6 +9,7 @@ from app.services.database_service import DatabaseService
 
 import os
 from lxml import etree
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -165,6 +166,14 @@ async def run_architect_agent(initial_state: dict):
             except Exception as e:
                 print(f"Failed to parse XML: {e}")
                 return None
+            # Add unique slideId to each SlideIdea element
+            namespace = {"ns": "http://www.complonkers-hackathon/slide_ideas"}
+            for slide_idea in xml_doc.findall("ns:SlideIdea", namespaces=namespace):
+                slide_id_elem = etree.Element("SlideId")
+                slide_id_elem.text = str(uuid.uuid4())
+                slide_idea.insert(0, slide_id_elem)
+            # Serialize modified XML with slideIds back to string
+            modified_xml = etree.tostring(xml_doc, encoding="unicode")
             if not schema.validate(xml_doc):
                 print("XML failed schema validation:")
                 for error in schema.error_log:
@@ -172,7 +181,7 @@ async def run_architect_agent(initial_state: dict):
                 return None
             else:
                 print("XML validated against schema.")
-                return generated_slides_xml
+                return modified_xml
         else:
             print(f"\nNo output found in session state for key '{simple_deck_architect_agent.output_key}'.")
             return None
