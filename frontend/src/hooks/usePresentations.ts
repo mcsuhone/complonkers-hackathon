@@ -50,6 +50,7 @@ export const useCreatePresentation = () => {
       // Build and store presentation record
       const presentation: Presentation = {
         id: jobId,
+        title: prompt.trim().slice(0, 100),
         prompt,
         audiences,
         createdAt: new Date(),

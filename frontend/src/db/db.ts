@@ -4,6 +4,7 @@ import type { Table } from "dexie";
 // Presentation entity
 export interface Presentation {
   id: string;
+  title: string;
   prompt: string;
   audiences: string[];
   createdAt: Date;
