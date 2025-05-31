@@ -14,9 +14,11 @@ import {
   ArrowLeft,
   Maximize,
 } from "lucide-react";
+import { useJobEvents } from "@/hooks/useJobEvents";
 
 export const SlidesPage: React.FC = () => {
   const { presentationId } = useParams<{ presentationId: string }>();
+  const events = useJobEvents(presentationId || "");
   const navigate = useNavigate();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPresentation, setIsPresentation] = useState(false);
@@ -194,6 +196,12 @@ export const SlidesPage: React.FC = () => {
   // Edit mode (normal view)
   return (
     <div className="min-h-screen bg-background">
+      {/* Event banner */}
+      {events.length > 0 && (
+        <div className="bg-yellow-100 text-yellow-800 p-2 text-center">
+          Event: {JSON.stringify(events[events.length - 1])}
+        </div>
+      )}
       {/* Header */}
       <div className="border-b bg-card">
         <div className="mx-auto px-4 py-4">

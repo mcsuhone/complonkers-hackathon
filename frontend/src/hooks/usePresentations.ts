@@ -42,11 +42,39 @@ export const useCreatePresentation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ presentation }: { presentation: Presentation }) => {
+    mutationFn: async ({
+      prompt,
+      audiences,
+    }: {
+      prompt: string;
+      audiences: string[];
+    }) => {
       try {
-        console.log("Creating presentation:", presentation);
+        console.log(
+          "Starting job creation for presentation:",
+          prompt,
+          audiences
+        );
+        // Call backend to create job and get jobId
+        const response = await fetch("http://localhost:8000/api/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, audiences }),
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to create job: ${response.statusText}`);
+        }
+        const { jobId } = await response.json();
+        // Build presentation object with jobId
+        const presentation: Presentation = {
+          id: jobId,
+          prompt,
+          audiences,
+          createdAt: new Date(),
+        };
+        console.log("Saving presentation locally:", presentation);
 
-        // 1. Create presentation
+        // 1. Create presentation in Dexie
         await presentationsService.create(presentation);
         console.log("Presentation created successfully");
 

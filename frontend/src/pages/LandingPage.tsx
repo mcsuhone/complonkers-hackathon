@@ -7,7 +7,6 @@ import {
   usePresentations,
   useDeletePresentation,
 } from "@/hooks/usePresentations";
-import type { Presentation as PresentationType } from "@/db";
 import db from "@/db/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,18 +58,12 @@ export function LandingPage() {
     e.preventDefault();
     if (audiences.length === 0 || !prompt.trim()) return;
 
-    const presentation: PresentationType = {
-      id: crypto.randomUUID(),
-      prompt: prompt.trim(),
-      audiences,
-      createdAt: new Date(),
-    };
-
-    console.log("Submitting presentation:", presentation);
+    console.log("Submitting presentation:", prompt, audiences);
 
     try {
       const result = await createPresentationMutation.mutateAsync({
-        presentation,
+        prompt: prompt.trim(),
+        audiences,
       });
       console.log("Mutation result:", result);
       // The mutation returns the presentation object, so we use result.id
