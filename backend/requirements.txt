@@ -1,8 +1,9 @@
-fastapi==0.109.2
-uvicorn==0.27.1
-pydantic==2.6.1
-sqlalchemy==2.0.27
-psycopg2-binary==2.9.9
-redis==5.0.1
+fastapi>=0.115.0
+uvicorn==0.34.1
+pydantic>=2.10.6
+sqlalchemy>=2.0.39
+psycopg2-binary
+redis>=5.2.1
 alembic==1.13.1
-python-dotenv==1.0.1 
+python-dotenv==1.0.1
+google-adk==1.1.1
