@@ -61,13 +61,6 @@ export function useJobEvents(jobId: string) {
               console.log("Debug: Slide:", slide);
               console.log("Debug: Slide XML:", slide.xml);
               console.log("Debug: Slide ID:", slide.slideId);
-              // ADDING RELIABILITY; THIS IS CLIENT EATING SHIT
-              const slideIdMatch = slide.slideId.match(/^(\d+)|(\d+)$/);
-              if (slideIdMatch) {
-                const extractedId = slideIdMatch[1] || slideIdMatch[2];
-                console.log("Debug: Extracted slide ID:", extractedId);
-                slide.slideId = extractedId;
-              }
               slidesService.updateXmlBySlideId(jobId, slide.slideId, slide.xml);
             })
           );
