@@ -30,6 +30,7 @@ async def run_ai_agent(
 
     runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
 
+    print('print0')
     initial_message = genai_types.Content(
         role='user',
         parts=[genai_types.Part(text=part) for part in message_parts]
@@ -37,7 +38,7 @@ async def run_ai_agent(
 
     # Run the agent to completion
     async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=initial_message):
-        print(event)
+        print('print1', event)
 
     # Retrieve the result
     final_session = await session_service.get_session(
@@ -49,5 +50,6 @@ async def run_ai_agent(
         logger.error(f"Final session not found for job {subject_id}")
         return None
 
+    print('print2')
     result = final_session.state.get(agent.output_key)
     return result

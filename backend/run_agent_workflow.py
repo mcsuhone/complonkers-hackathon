@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
+from backend.agents.layout_agent import layout_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.simple_deck_architect_agent import simple_deck_architect_agent
@@ -47,6 +48,18 @@ async def run_agent_workflow(
     prompt: str,
     audiences: list[str],
 ):
+    try:
+        return await _run_agent_workflow(subject_id, prompt, audiences)
+    except Exception as e:
+        logger.error(f"Error running agent workflow for {subject_id}: {e}")
+        print(f"Error running agent workflow for {subject_id}: {e}")
+        return None
+
+async def _run_agent_workflow(
+    subject_id: str,
+    prompt: str,
+    audiences: list[str],
+):
     """
     Main workflow to run one or more AI agents in sequence, using only the initial request inputs.
     """
@@ -71,7 +84,7 @@ async def run_agent_workflow(
 
     # Parse and publish interpreter output
     parsed_interp = safe_parse_json(interpreter_result)
-    await publish_message(subject_id, json.dumps(parsed_interp))
+    await publish_message(subject_id, interpreter_result)
     print(f"Interpreter result: {parsed_interp}")
 
     # 2) Run simple deck architect agent
@@ -96,6 +109,20 @@ async def run_agent_workflow(
     print(f"Architect result: {architect_result}")  # xml string
     await publish_message(subject_id, architect_result)
     
-    
+    # 3) Layout Agent
+    message = architect_result
+    layout_result = await run_ai_agent(
+        layout_agent,
+        subject_id=subject_id,
+        initial_state={},
+        message_parts=[message],
+        app_name='fuck_off'
+    )
+    if layout_result is None:
+        print('ERROR')
+        logger.error(f"No result from agent {layout_agent.name} for {subject_id}")
+        return None
+    await publish_message(subject_id, layout_result)
+    print(f'Layout Agent result: {layout_result}')
 
     return architect_result
