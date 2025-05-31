@@ -3,8 +3,8 @@ import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
 from redis_utils.redis_stream import publish_message
-from app.agents.interpreter.agent import job_interpreter_agent
-from app.agents.architect.simple_deck_architect_agent import simple_deck_architect_agent
+from app.agents.interpreter_agent import job_interpreter_agent
+from app.agents.simple_deck_architect_agent import simple_deck_architect_agent
 from json import JSONDecodeError
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ def safe_parse_json(raw):
         return d["job_plan"]
     return d
 
-async def run_multiagent_workflow(
+async def run_agent_workflow(
     subject_id: str,
     prompt: str,
     audiences: list[str],

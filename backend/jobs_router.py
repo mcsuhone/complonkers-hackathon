@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 
 from redis_utils.redis_stream import publish_message, listen_stream
-from run_multiagent_workflow import run_multiagent_workflow
+from run_agent_workflow import run_agent_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ async def create_job(request: JobCreateRequest, background_tasks: BackgroundTask
     job_id = str(uuid.uuid4())
     # Kick off multi-agent workflow in background using only request data
     background_tasks.add_task(
-        run_multiagent_workflow,
+        run_agent_workflow,
         job_id,
         request.prompt,
         request.audiences
