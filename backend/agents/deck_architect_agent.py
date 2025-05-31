@@ -85,7 +85,7 @@ deck_architect_agent = LlmAgent(
     name="SimpleDeckArchitectAgent",
     model=Config.MODEL_NAME,
     instruction=DECK_ARCHITECT_PROMPT,
-    tools=[db_schema_tool],
+    tools=[],
     output_key="simple_deck_slides_xml"
 )
 
