@@ -50,7 +50,7 @@ class Config:
 
 
 
-schema = os.path.join("..", "agents", "chinook.sql")
+schema = os.path.join("agents", "chinook.sql")
 with open(schema, 'r') as file:
     schemas = file.read()
 
