@@ -109,7 +109,6 @@ async def _run_agent_workflow(
 
     # Publish architect output
     print(f"Architect result: {architect_result}")  # xml string
-    print('type', type(architect_result))
     
     logger.info(f"Architect result through logger")
     await publish_message(subject_id, architect_result)
