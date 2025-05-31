@@ -104,13 +104,9 @@ export default function LandingPage() {
 
               <div className="space-y-3">
                 <Label>Target Audiences</Label>
-                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border rounded-md bg-muted/30">
-                  {audiences.length === 0 ? (
-                    <span className="text-muted-foreground text-sm">
-                      Add at least one audience tag
-                    </span>
-                  ) : (
-                    audiences.map((aud, idx) => (
+                {audiences.length !== 0 && (
+                  <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border rounded-md bg-muted/30">
+                    {audiences.map((aud, idx) => (
                       <div
                         key={idx}
                         className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
@@ -125,9 +121,9 @@ export default function LandingPage() {
                           <Trash className="h-3 w-3" />
                         </Button>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <Input

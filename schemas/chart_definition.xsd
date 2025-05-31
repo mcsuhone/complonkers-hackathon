@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.complonkers-hackathon/chart_definition"
+           xmlns="http://www.complonkers-hackathon/chart_definition"
+           elementFormDefault="qualified">
+
+  <!-- Root element for chart definition -->
+  <xs:element name="ChartDefinition" type="ChartDefinitionType">
+    <xs:annotation>
+      <xs:documentation>
+        Chart definitions are stored in a registry/store and referenced by ID from slide layouts.
+        The slide layout uses the chartId attribute to reference these definitions.
+        This separation allows for reusable chart definitions and cleaner slide layouts.
+      </xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- Main chart definition type -->
+  <xs:complexType name="ChartDefinitionType">
+    <xs:sequence>
+      <xs:element name="ChartConfig" type="ChartConfigType"/>
+      <xs:element name="Data" type="DataType"/>
+      <xs:element name="Styling" type="StylingType" minOccurs="0"/>
+      <xs:element name="Interactions" type="InteractionsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Unique identifier for this chart definition. This ID is used by slide layouts 
+          to reference and render this chart. Should be descriptive and unique across 
+          the entire presentation system.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Chart configuration -->
+  <xs:complexType name="ChartConfigType">
+    <xs:sequence>
+      <xs:element name="Dimensions" type="DimensionsType"/>
+      <xs:element name="Margins" type="MarginsType" minOccurs="0"/>
+      <xs:element name="Axes" type="AxesType" minOccurs="0"/>
+      <xs:element name="Legend" type="LegendType" minOccurs="0"/>
+      <xs:element name="Projection" type="ProjectionType" minOccurs="0"/>
+      <xs:element name="Hierarchy" type="HierarchyType" minOccurs="0"/>
+      <xs:element name="Force" type="ForceType" minOccurs="0"/>
+      <xs:element name="Transition" type="TransitionType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="type" type="ChartTypeEnum" use="required"/>
+    <xs:attribute name="title" type="xs:string" use="optional"/>
+    <xs:attribute name="subtitle" type="xs:string" use="optional"/>
+    <xs:attribute name="theme" type="xs:string" use="optional" default="default"/>
+  </xs:complexType>
+
+  <!-- Chart types enumeration -->
+  <xs:simpleType name="ChartTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="bar"/>
+      <xs:enumeration value="line"/>
+      <xs:enumeration value="area"/>
+      <xs:enumeration value="pie"/>
+      <xs:enumeration value="donut"/>
+      <xs:enumeration value="scatter"/>
+      <xs:enumeration value="bubble"/>
+      <xs:enumeration value="histogram"/>
+      <xs:enumeration value="heatmap"/>
+      <xs:enumeration value="treemap"/>
+      <xs:enumeration value="sunburst"/>
+      <xs:enumeration value="sankey"/>
+      <xs:enumeration value="chord"/>
+      <xs:enumeration value="force"/>
+      <xs:enumeration value="network"/>
+      <xs:enumeration value="tree"/>
+      <xs:enumeration value="cluster"/>
+      <xs:enumeration value="pack"/>
+      <xs:enumeration value="partition"/>
+      <xs:enumeration value="map"/>
+      <xs:enumeration value="choropleth"/>
+      <xs:enumeration value="contour"/>
+      <xs:enumeration value="density"/>
+      <xs:enumeration value="violin"/>
+      <xs:enumeration value="boxplot"/>
+      <xs:enumeration value="candlestick"/>
+      <xs:enumeration value="radar"/>
+      <xs:enumeration value="parallel"/>
+      <xs:enumeration value="streamgraph"/>
+      <xs:enumeration value="ridgeline"/>
+      <xs:enumeration value="calendar"/>
+      <xs:enumeration value="matrix"/>
+      <xs:enumeration value="arc"/>
+      <xs:enumeration value="ribbon"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Dimensions -->
+  <xs:complexType name="DimensionsType">
+    <xs:attribute name="width" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="height" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="responsive" type="xs:boolean" use="optional" default="true"/>
+  </xs:complexType>
+
+  <!-- Margins -->
+  <xs:complexType name="MarginsType">
+    <xs:attribute name="top" type="xs:nonNegativeInteger" use="optional" default="20"/>
+    <xs:attribute name="right" type="xs:nonNegativeInteger" use="optional" default="20"/>
+    <xs:attribute name="bottom" type="xs:nonNegativeInteger" use="optional" default="40"/>
+    <xs:attribute name="left" type="xs:nonNegativeInteger" use="optional" default="40"/>
+  </xs:complexType>
+
+  <!-- Axes configuration -->
+  <xs:complexType name="AxesType">
+    <xs:sequence>
+      <xs:element name="XAxis" type="AxisType" minOccurs="0"/>
+      <xs:element name="YAxis" type="AxisType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Individual axis configuration -->
+  <xs:complexType name="AxisType">
+    <xs:attribute name="label" type="xs:string" use="optional"/>
+    <xs:attribute name="scale" type="ScaleTypeEnum" use="optional" default="linear"/>
+    <xs:attribute name="domain" type="xs:string" use="optional"/>
+    <xs:attribute name="tickCount" type="xs:positiveInteger" use="optional"/>
+    <xs:attribute name="tickFormat" type="xs:string" use="optional"/>
+    <xs:attribute name="gridLines" type="xs:boolean" use="optional" default="false"/>
+  </xs:complexType>
+
+  <!-- Scale types -->
+  <xs:simpleType name="ScaleTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="linear"/>
+      <xs:enumeration value="log"/>
+      <xs:enumeration value="sqrt"/>
+      <xs:enumeration value="time"/>
+      <xs:enumeration value="ordinal"/>
+      <xs:enumeration value="band"/>
+      <xs:enumeration value="point"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Legend configuration -->
+  <xs:complexType name="LegendType">
+    <xs:attribute name="show" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="position" type="LegendPositionEnum" use="optional" default="right"/>
+    <xs:attribute name="orientation" type="OrientationEnum" use="optional" default="vertical"/>
+  </xs:complexType>
+
+  <!-- Legend position -->
+  <xs:simpleType name="LegendPositionEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="top"/>
+      <xs:enumeration value="right"/>
+      <xs:enumeration value="bottom"/>
+      <xs:enumeration value="left"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Orientation -->
+  <xs:simpleType name="OrientationEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="horizontal"/>
+      <xs:enumeration value="vertical"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Data definition -->
+  <xs:complexType name="DataType">
+    <xs:sequence>
+      <xs:element name="DataSource" type="DataSourceType"/>
+      <xs:element name="DataMapping" type="DataMappingType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Data source -->
+  <xs:complexType name="DataSourceType">
+    <xs:attribute name="type" type="DataSourceTypeEnum" use="required"/>
+    <xs:attribute name="url" type="xs:string" use="optional"/>
+    <xs:attribute name="placeholder" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Data source types -->
+  <xs:simpleType name="DataSourceTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="inline"/>
+      <xs:enumeration value="api"/>
+      <xs:enumeration value="csv"/>
+      <xs:enumeration value="tsv"/>
+      <xs:enumeration value="json"/>
+      <xs:enumeration value="geojson"/>
+      <xs:enumeration value="topojson"/>
+      <xs:enumeration value="xml"/>
+      <xs:enumeration value="mock"/>
+      <xs:enumeration value="websocket"/>
+      <xs:enumeration value="sse"/>
+      <xs:enumeration value="graphql"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Data mapping -->
+  <xs:complexType name="DataMappingType">
+    <xs:sequence>
+      <xs:element name="Field" type="FieldType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Field mapping -->
+  <xs:complexType name="FieldType">
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="role" type="FieldRoleEnum" use="required"/>
+    <xs:attribute name="dataType" type="DataTypeEnum" use="optional" default="string"/>
+    <xs:attribute name="format" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Field roles -->
+  <xs:simpleType name="FieldRoleEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="x"/>
+      <xs:enumeration value="y"/>
+      <xs:enumeration value="z"/>
+      <xs:enumeration value="color"/>
+      <xs:enumeration value="size"/>
+      <xs:enumeration value="label"/>
+      <xs:enumeration value="category"/>
+      <xs:enumeration value="value"/>
+      <xs:enumeration value="tooltip"/>
+      <xs:enumeration value="id"/>
+      <xs:enumeration value="parent"/>
+      <xs:enumeration value="children"/>
+      <xs:enumeration value="source"/>
+      <xs:enumeration value="target"/>
+      <xs:enumeration value="weight"/>
+      <xs:enumeration value="latitude"/>
+      <xs:enumeration value="longitude"/>
+      <xs:enumeration value="geometry"/>
+      <xs:enumeration value="properties"/>
+      <xs:enumeration value="angle"/>
+      <xs:enumeration value="radius"/>
+      <xs:enumeration value="startAngle"/>
+      <xs:enumeration value="endAngle"/>
+      <xs:enumeration value="innerRadius"/>
+      <xs:enumeration value="outerRadius"/>
+      <xs:enumeration value="depth"/>
+      <xs:enumeration value="height"/>
+      <xs:enumeration value="open"/>
+      <xs:enumeration value="high"/>
+      <xs:enumeration value="low"/>
+      <xs:enumeration value="close"/>
+      <xs:enumeration value="volume"/>
+      <xs:enumeration value="date"/>
+      <xs:enumeration value="time"/>
+      <xs:enumeration value="group"/>
+      <xs:enumeration value="series"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Data types -->
+  <xs:simpleType name="DataTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="number"/>
+      <xs:enumeration value="date"/>
+      <xs:enumeration value="boolean"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Styling configuration -->
+  <xs:complexType name="StylingType">
+    <xs:sequence>
+      <xs:element name="Colors" type="ColorsType" minOccurs="0"/>
+      <xs:element name="Fonts" type="FontsType" minOccurs="0"/>
+      <xs:element name="Animation" type="AnimationType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Colors -->
+  <xs:complexType name="ColorsType">
+    <xs:attribute name="scheme" type="ColorSchemeEnum" use="optional" default="category10"/>
+    <xs:attribute name="primary" type="xs:string" use="optional"/>
+    <xs:attribute name="secondary" type="xs:string" use="optional"/>
+    <xs:attribute name="background" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Color schemes -->
+  <xs:simpleType name="ColorSchemeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="category10"/>
+      <xs:enumeration value="category20"/>
+      <xs:enumeration value="category20b"/>
+      <xs:enumeration value="category20c"/>
+      <xs:enumeration value="accent"/>
+      <xs:enumeration value="dark2"/>
+      <xs:enumeration value="paired"/>
+      <xs:enumeration value="pastel1"/>
+      <xs:enumeration value="pastel2"/>
+      <xs:enumeration value="set1"/>
+      <xs:enumeration value="set2"/>
+      <xs:enumeration value="set3"/>
+      <xs:enumeration value="tableau10"/>
+      <xs:enumeration value="viridis"/>
+      <xs:enumeration value="plasma"/>
+      <xs:enumeration value="inferno"/>
+      <xs:enumeration value="magma"/>
+      <xs:enumeration value="cividis"/>
+      <xs:enumeration value="turbo"/>
+      <xs:enumeration value="blues"/>
+      <xs:enumeration value="greens"/>
+      <xs:enumeration value="greys"/>
+      <xs:enumeration value="oranges"/>
+      <xs:enumeration value="purples"/>
+      <xs:enumeration value="reds"/>
+      <xs:enumeration value="bugn"/>
+      <xs:enumeration value="bupu"/>
+      <xs:enumeration value="gnbu"/>
+      <xs:enumeration value="orrd"/>
+      <xs:enumeration value="pubu"/>
+      <xs:enumeration value="pubugn"/>
+      <xs:enumeration value="purd"/>
+      <xs:enumeration value="rdpu"/>
+      <xs:enumeration value="ylgn"/>
+      <xs:enumeration value="ylgnbu"/>
+      <xs:enumeration value="ylorbr"/>
+      <xs:enumeration value="ylorrd"/>
+      <xs:enumeration value="brbg"/>
+      <xs:enumeration value="piyg"/>
+      <xs:enumeration value="prgn"/>
+      <xs:enumeration value="puor"/>
+      <xs:enumeration value="rdbu"/>
+      <xs:enumeration value="rdgy"/>
+      <xs:enumeration value="rdylbu"/>
+      <xs:enumeration value="rdylgn"/>
+      <xs:enumeration value="spectral"/>
+      <xs:enumeration value="rainbow"/>
+      <xs:enumeration value="sinebow"/>
+      <xs:enumeration value="cool"/>
+      <xs:enumeration value="warm"/>
+      <xs:enumeration value="cubehelix"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Fonts -->
+  <xs:complexType name="FontsType">
+    <xs:attribute name="family" type="xs:string" use="optional" default="sans-serif"/>
+    <xs:attribute name="size" type="xs:positiveInteger" use="optional" default="12"/>
+    <xs:attribute name="titleSize" type="xs:positiveInteger" use="optional" default="16"/>
+  </xs:complexType>
+
+  <!-- Animation -->
+  <xs:complexType name="AnimationType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="duration" type="xs:positiveInteger" use="optional" default="750"/>
+    <xs:attribute name="easing" type="EasingEnum" use="optional" default="ease"/>
+  </xs:complexType>
+
+  <!-- Easing types -->
+  <xs:simpleType name="EasingEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="linear"/>
+      <xs:enumeration value="ease"/>
+      <xs:enumeration value="ease-in"/>
+      <xs:enumeration value="ease-out"/>
+      <xs:enumeration value="ease-in-out"/>
+      <xs:enumeration value="bounce"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Interactions -->
+  <xs:complexType name="InteractionsType">
+    <xs:sequence>
+      <xs:element name="Tooltip" type="TooltipType" minOccurs="0"/>
+      <xs:element name="Zoom" type="ZoomType" minOccurs="0"/>
+      <xs:element name="Pan" type="PanType" minOccurs="0"/>
+      <xs:element name="Brush" type="BrushType" minOccurs="0"/>
+      <xs:element name="Drag" type="DragType" minOccurs="0"/>
+      <xs:element name="Click" type="ClickType" minOccurs="0"/>
+      <xs:element name="Hover" type="HoverType" minOccurs="0"/>
+      <xs:element name="Selection" type="SelectionType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Tooltip -->
+  <xs:complexType name="TooltipType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="format" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Zoom -->
+  <xs:complexType name="ZoomType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="scaleExtent" type="xs:string" use="optional" default="[1, 10]"/>
+  </xs:complexType>
+
+  <!-- Brush -->
+  <xs:complexType name="BrushType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="axis" type="BrushAxisEnum" use="optional" default="x"/>
+  </xs:complexType>
+
+  <!-- Brush axis -->
+  <xs:simpleType name="BrushAxisEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="x"/>
+      <xs:enumeration value="y"/>
+      <xs:enumeration value="xy"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Geographic projection for maps -->
+  <xs:complexType name="ProjectionType">
+    <xs:attribute name="type" type="ProjectionTypeEnum" use="optional" default="mercator"/>
+    <xs:attribute name="scale" type="xs:decimal" use="optional"/>
+    <xs:attribute name="center" type="xs:string" use="optional"/>
+    <xs:attribute name="translate" type="xs:string" use="optional"/>
+    <xs:attribute name="rotate" type="xs:string" use="optional"/>
+    <xs:attribute name="clipAngle" type="xs:decimal" use="optional"/>
+  </xs:complexType>
+
+  <!-- Projection types -->
+  <xs:simpleType name="ProjectionTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="mercator"/>
+      <xs:enumeration value="albers"/>
+      <xs:enumeration value="albersUsa"/>
+      <xs:enumeration value="azimuthalEqualArea"/>
+      <xs:enumeration value="azimuthalEquidistant"/>
+      <xs:enumeration value="conic"/>
+      <xs:enumeration value="conicEqualArea"/>
+      <xs:enumeration value="conicEquidistant"/>
+      <xs:enumeration value="equirectangular"/>
+      <xs:enumeration value="gnomonic"/>
+      <xs:enumeration value="orthographic"/>
+      <xs:enumeration value="stereographic"/>
+      <xs:enumeration value="naturalEarth"/>
+      <xs:enumeration value="robinson"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Hierarchy configuration for tree-like structures -->
+  <xs:complexType name="HierarchyType">
+    <xs:attribute name="size" type="xs:string" use="optional"/>
+    <xs:attribute name="padding" type="xs:decimal" use="optional"/>
+    <xs:attribute name="separation" type="xs:string" use="optional"/>
+    <xs:attribute name="nodeSize" type="xs:string" use="optional"/>
+    <xs:attribute name="tile" type="TileTypeEnum" use="optional" default="squarify"/>
+    <xs:attribute name="ratio" type="xs:decimal" use="optional"/>
+    <xs:attribute name="round" type="xs:boolean" use="optional" default="true"/>
+  </xs:complexType>
+
+  <!-- Tile types for treemaps -->
+  <xs:simpleType name="TileTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="squarify"/>
+      <xs:enumeration value="slice"/>
+      <xs:enumeration value="dice"/>
+      <xs:enumeration value="sliceDice"/>
+      <xs:enumeration value="binary"/>
+      <xs:enumeration value="resquarify"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Force simulation configuration -->
+  <xs:complexType name="ForceType">
+    <xs:sequence>
+      <xs:element name="Forces" type="ForcesType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="alphaMin" type="xs:decimal" use="optional" default="0.001"/>
+    <xs:attribute name="alphaDecay" type="xs:decimal" use="optional" default="0.0228"/>
+    <xs:attribute name="velocityDecay" type="xs:decimal" use="optional" default="0.4"/>
+  </xs:complexType>
+
+  <!-- Individual forces -->
+  <xs:complexType name="ForcesType">
+    <xs:sequence>
+      <xs:element name="CenterForce" type="CenterForceType" minOccurs="0"/>
+      <xs:element name="CollideForce" type="CollideForceType" minOccurs="0"/>
+      <xs:element name="LinkForce" type="LinkForceType" minOccurs="0"/>
+      <xs:element name="ManyBodyForce" type="ManyBodyForceType" minOccurs="0"/>
+      <xs:element name="XForce" type="PositionForceType" minOccurs="0"/>
+      <xs:element name="YForce" type="PositionForceType" minOccurs="0"/>
+      <xs:element name="RadialForce" type="RadialForceType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Force types -->
+  <xs:complexType name="CenterForceType">
+    <xs:attribute name="x" type="xs:decimal" use="optional"/>
+    <xs:attribute name="y" type="xs:decimal" use="optional"/>
+    <xs:attribute name="strength" type="xs:decimal" use="optional" default="1"/>
+  </xs:complexType>
+
+  <xs:complexType name="CollideForceType">
+    <xs:attribute name="radius" type="xs:decimal" use="optional" default="1"/>
+    <xs:attribute name="strength" type="xs:decimal" use="optional" default="0.7"/>
+    <xs:attribute name="iterations" type="xs:positiveInteger" use="optional" default="1"/>
+  </xs:complexType>
+
+  <xs:complexType name="LinkForceType">
+    <xs:attribute name="distance" type="xs:decimal" use="optional" default="30"/>
+    <xs:attribute name="strength" type="xs:decimal" use="optional"/>
+    <xs:attribute name="iterations" type="xs:positiveInteger" use="optional" default="1"/>
+  </xs:complexType>
+
+  <xs:complexType name="ManyBodyForceType">
+    <xs:attribute name="strength" type="xs:decimal" use="optional" default="-30"/>
+    <xs:attribute name="theta" type="xs:decimal" use="optional" default="0.9"/>
+    <xs:attribute name="distanceMin" type="xs:decimal" use="optional" default="1"/>
+    <xs:attribute name="distanceMax" type="xs:decimal" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="PositionForceType">
+    <xs:attribute name="target" type="xs:decimal" use="optional"/>
+    <xs:attribute name="strength" type="xs:decimal" use="optional" default="0.1"/>
+  </xs:complexType>
+
+  <xs:complexType name="RadialForceType">
+    <xs:attribute name="radius" type="xs:decimal" use="optional" default="100"/>
+    <xs:attribute name="x" type="xs:decimal" use="optional"/>
+    <xs:attribute name="y" type="xs:decimal" use="optional"/>
+    <xs:attribute name="strength" type="xs:decimal" use="optional" default="0.1"/>
+  </xs:complexType>
+
+  <!-- Transition configuration -->
+  <xs:complexType name="TransitionType">
+    <xs:attribute name="duration" type="xs:positiveInteger" use="optional" default="750"/>
+    <xs:attribute name="delay" type="xs:nonNegativeInteger" use="optional" default="0"/>
+    <xs:attribute name="ease" type="EasingEnum" use="optional" default="ease"/>
+    <xs:attribute name="stagger" type="xs:nonNegativeInteger" use="optional" default="0"/>
+  </xs:complexType>
+
+  <!-- Additional interaction types -->
+  <xs:complexType name="PanType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="extent" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="DragType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="subject" type="xs:string" use="optional"/>
+    <xs:attribute name="container" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="ClickType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="action" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="HoverType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="highlight" type="xs:boolean" use="optional" default="true"/>
+    <xs:attribute name="delay" type="xs:nonNegativeInteger" use="optional" default="0"/>
+  </xs:complexType>
+
+  <xs:complexType name="SelectionType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="multiple" type="xs:boolean" use="optional" default="false"/>
+    <xs:attribute name="mode" type="SelectionModeEnum" use="optional" default="single"/>
+  </xs:complexType>
+
+  <xs:simpleType name="SelectionModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="single"/>
+      <xs:enumeration value="multiple"/>
+      <xs:enumeration value="range"/>
+      <xs:enumeration value="lasso"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema> 

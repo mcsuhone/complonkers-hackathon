@@ -70,6 +70,6 @@ An AI-powered presentation generator that creates context-aware slide decks by:
 ## IMPORTANT CONVENTIONS
 
 - Always use shadcn components that are found in /frontend/src/components/ui
-- Install more if needed
+- Always use this command to add more components `pnpm dlx shadcn@latest add <component_name>`
 - Use tanstack query to call backend / async client database operations
 

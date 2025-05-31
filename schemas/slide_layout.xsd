@@ -35,7 +35,7 @@
     <xs:attribute name="placeholder" type="xs:string" use="optional"/>
     <xs:attribute name="classes" type="xs:string" use="optional">
       <xs:annotation>
-        <xs:documentation>Space-separated list of Tailwind CSS classes.</xs:documentation>
+        <xs:documentation>Space-separated list of Tailwind CSS classes for styling and positioning.</xs:documentation>
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
@@ -69,13 +69,22 @@
     </xs:complexContent>
   </xs:complexType>
 
-  <!-- Chart element with optional type hint -->
+  <!-- Chart element with optional type hint and chart ID reference -->
   <xs:simpleType name="ChartKindType">
     <xs:restriction base="xs:string">
       <xs:enumeration value="bar"/>
       <xs:enumeration value="line"/>
       <xs:enumeration value="pie"/>
       <xs:enumeration value="scatter"/>
+      <xs:enumeration value="bubble"/>
+      <xs:enumeration value="network"/>
+      <xs:enumeration value="treemap"/>
+      <xs:enumeration value="choropleth"/>
+      <xs:enumeration value="candlestick"/>
+      <xs:enumeration value="heatmap"/>
+      <xs:enumeration value="radar"/>
+      <xs:enumeration value="sankey"/>
+      <xs:enumeration value="streamgraph"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -83,6 +92,11 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:attribute name="type" type="ChartKindType" use="optional"/>
+        <xs:attribute name="chartId" type="xs:string" use="optional">
+          <xs:annotation>
+            <xs:documentation>Reference ID to a chart definition. The chart renderer will use this ID to fetch the corresponding chart definition from the chart registry/store.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>

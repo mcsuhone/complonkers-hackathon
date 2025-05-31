@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
+import { D3ChartRenderer } from "./D3ChartRenderer";
 
 interface SlideRendererProps {
   layoutXml: string;
@@ -180,6 +181,16 @@ const renderElement = (
 
     case "Chart": {
       const chartType = element.getAttribute("type") || "bar";
+      const chartId = element.getAttribute("chartId");
+
+      // If chartId is provided, use D3ChartRenderer
+      if (chartId) {
+        return (
+          <div key={id} className={classes}>
+            <D3ChartRenderer chartId={chartId} className="w-full h-full" />
+          </div>
+        );
+      }
 
       return (
         <div key={id} className={classes}>
