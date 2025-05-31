@@ -6,14 +6,12 @@ import "./App.css";
 
 function App() {
   return (
-    <div className="h-screen w-screen flex flex-col">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/slides/:presentationId" element={<SlidesPage />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/slides/:presentationId" element={<SlidesPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
