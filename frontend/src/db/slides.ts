@@ -26,9 +26,28 @@ export const slidesService = {
     return await db.slides.get(id);
   },
 
-  // Update slide content
-  updateContent: async (id: number, content: string): Promise<void> => {
-    await db.slides.update(id, { content });
+  // Update component content
+  updateComponentContent: async (
+    id: number,
+    componentId: string,
+    content: string
+  ): Promise<void> => {
+    const slide = await db.slides.get(id);
+    if (slide) {
+      const updatedComponentContent = {
+        ...slide.componentContent,
+        [componentId]: content,
+      };
+      await db.slides.update(id, { componentContent: updatedComponentContent });
+    }
+  },
+
+  // Update multiple component contents
+  updateComponentContents: async (
+    id: number,
+    componentContent: Record<string, string>
+  ): Promise<void> => {
+    await db.slides.update(id, { componentContent });
   },
 
   // Update slide layout
@@ -36,10 +55,10 @@ export const slidesService = {
     await db.slides.update(id, { layout });
   },
 
-  // Update both content and layout
+  // Update both component content and layout
   updateSlide: async (
     id: number,
-    updates: { content?: string; layout?: string }
+    updates: { componentContent?: Record<string, string>; layout?: string }
   ): Promise<void> => {
     await db.slides.update(id, updates);
   },

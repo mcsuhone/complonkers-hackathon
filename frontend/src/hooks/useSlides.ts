@@ -51,13 +51,41 @@ export const useCreateSlide = () => {
   });
 };
 
-// Update slide content
-export const useUpdateSlideContent = () => {
+// Update component content
+export const useUpdateComponentContent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, content }: { id: number; content: string }) =>
-      slidesService.updateContent(id, content),
+    mutationFn: ({
+      id,
+      componentId,
+      content,
+    }: {
+      id: number;
+      componentId: string;
+      content: string;
+    }) => slidesService.updateComponentContent(id, componentId, content),
+    onSuccess: (_, { id }) => {
+      // Invalidate specific slide
+      queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
+      // Also invalidate all slides queries to update the list
+      queryClient.invalidateQueries({ queryKey: slideKeys.all });
+    },
+  });
+};
+
+// Update multiple component contents
+export const useUpdateComponentContents = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      componentContent,
+    }: {
+      id: number;
+      componentContent: Record<string, string>;
+    }) => slidesService.updateComponentContents(id, componentContent),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide
       queryClient.invalidateQueries({ queryKey: slideKeys.detail(id) });
@@ -83,7 +111,7 @@ export const useUpdateSlideLayout = () => {
   });
 };
 
-// Update slide (both content and layout)
+// Update slide (both component content and layout)
 export const useUpdateSlide = () => {
   const queryClient = useQueryClient();
 
@@ -93,7 +121,7 @@ export const useUpdateSlide = () => {
       updates,
     }: {
       id: number;
-      updates: { content?: string; layout?: string };
+      updates: { componentContent?: Record<string, string>; layout?: string };
     }) => slidesService.updateSlide(id, updates),
     onSuccess: (_, { id }) => {
       // Invalidate specific slide

@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function LandingPage() {
+export function LandingPage() {
   const [prompt, setPrompt] = useState("");
   const [audienceInput, setAudienceInput] = useState("");
   const [audiences, setAudiences] = useState<string[]>([]);

@@ -1,7 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { presentationsService, slidesService } from "@/db";
+import {
+  presentationsService,
+  slidesService,
+  layoutsService,
+  chartsService,
+  textComponentsService,
+} from "@/db";
 import type { Presentation, Slide } from "@/db";
-import { getLayoutByType } from "@/data/slideLayouts";
+import {
+  templateLayouts,
+  templateCharts,
+  templateTextComponents,
+  templateSlides,
+} from "@/data/presentationTemplate";
 
 // Query keys
 export const presentationKeys = {
@@ -13,7 +24,7 @@ export const presentationKeys = {
 export const usePresentations = () => {
   return useQuery({
     queryKey: presentationKeys.all,
-    queryFn: presentationsService.getAll,
+    queryFn: () => presentationsService.getAll(),
   });
 };
 
@@ -26,43 +37,36 @@ export const usePresentation = (id: string) => {
   });
 };
 
-// Create presentation with initial slides
+// Create presentation with template data seeding
 export const useCreatePresentation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ presentation }: { presentation: Presentation }) => {
-      // Create presentation
+      // 1. Create presentation
       await presentationsService.create(presentation);
 
-      // Create 3 initial slides with hardcoded XML layouts
-      const slides: Omit<Slide, "id">[] = [
-        {
-          presentationId: presentation.id,
-          index: 0,
-          content: "Title Slide",
-          layout: getLayoutByType("title"),
-        },
-        {
-          presentationId: presentation.id,
-          index: 1,
-          content: "Content Slide",
-          layout: getLayoutByType("content"),
-        },
-        {
-          presentationId: presentation.id,
-          index: 2,
-          content: "Chart Slide",
-          layout: getLayoutByType("chart"),
-        },
-      ];
+      // 2. Seed template data into database
+      await Promise.all([
+        layoutsService.createMany(templateLayouts),
+        chartsService.createMany(templateCharts),
+        textComponentsService.createMany(templateTextComponents),
+      ]);
 
-      await slidesService.createMany(slides);
+      // 3. Create slides with layoutId references
+      const slides: Omit<Slide, "id">[] = templateSlides.map(
+        (slideTemplate) => ({
+          presentationId: presentation.id,
+          index: slideTemplate.index,
+          layoutId: slideTemplate.layoutId,
+        })
+      );
 
-      return presentation.id;
+      await Promise.all(slides.map((slide) => slidesService.create(slide)));
+
+      return presentation;
     },
     onSuccess: () => {
-      // Invalidate presentations list
       queryClient.invalidateQueries({ queryKey: presentationKeys.all });
     },
   });
@@ -73,15 +77,17 @@ export const useUpdatePresentation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       updates,
     }: {
       id: string;
       updates: Partial<Omit<Presentation, "id">>;
-    }) => presentationsService.update(id, updates),
-    onSuccess: (_, { id }) => {
-      // Invalidate specific presentation and list
+    }) => {
+      await presentationsService.update(id, updates);
+      return { id, updates };
+    },
+    onSuccess: ({ id }) => {
       queryClient.invalidateQueries({ queryKey: presentationKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: presentationKeys.all });
     },
@@ -94,13 +100,17 @@ export const useDeletePresentation = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Delete all slides first
-      await slidesService.deleteByPresentationId(id);
-      // Then delete presentation
+      // Delete associated slides first
+      const slides = await slidesService.getByPresentationId(id);
+      await Promise.all(
+        slides.map((slide) => slidesService.delete(slide.id!, id))
+      );
+
+      // Delete presentation
       await presentationsService.delete(id);
+      return id;
     },
     onSuccess: () => {
-      // Invalidate presentations list
       queryClient.invalidateQueries({ queryKey: presentationKeys.all });
     },
   });

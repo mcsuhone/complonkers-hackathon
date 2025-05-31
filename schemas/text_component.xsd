@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.complonkers-hackathon/text_component"
+           xmlns="http://www.complonkers-hackathon/text_component"
+           elementFormDefault="qualified">
+
+  <!-- Root element for a text component definition -->
+  <xs:element name="TextComponent" type="TextComponentType"/>
+
+  <!-- Main text component definition -->
+  <xs:complexType name="TextComponentType">
+    <xs:sequence>
+      <xs:element name="Content" type="ContentType"/>
+      <xs:element name="Styling" type="StylingType" minOccurs="0"/>
+      <xs:element name="Metadata" type="MetadataType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string" use="optional"/>
+    <xs:attribute name="version" type="xs:string" use="optional" default="1.0"/>
+  </xs:complexType>
+
+  <!-- Content definition -->
+  <xs:complexType name="ContentType">
+    <xs:sequence>
+      <xs:element name="Text" type="xs:string"/>
+      <xs:element name="PlaceholderText" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="type" type="ContentTypeEnum" use="optional" default="static"/>
+    <xs:attribute name="editable" type="xs:boolean" use="optional" default="true"/>
+  </xs:complexType>
+
+  <!-- Content type enumeration -->
+  <xs:simpleType name="ContentTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="static"/>
+      <xs:enumeration value="dynamic"/>
+      <xs:enumeration value="template"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Styling definition -->
+  <xs:complexType name="StylingType">
+    <xs:sequence>
+      <xs:element name="TailwindClasses" type="xs:string" minOccurs="0"/>
+      <xs:element name="CustomCSS" type="xs:string" minOccurs="0"/>
+      <xs:element name="Typography" type="TypographyType" minOccurs="0"/>
+      <xs:element name="Colors" type="ColorsType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Typography styling -->
+  <xs:complexType name="TypographyType">
+    <xs:attribute name="fontSize" type="xs:string" use="optional"/>
+    <xs:attribute name="fontWeight" type="xs:string" use="optional"/>
+    <xs:attribute name="fontFamily" type="xs:string" use="optional"/>
+    <xs:attribute name="lineHeight" type="xs:string" use="optional"/>
+    <xs:attribute name="letterSpacing" type="xs:string" use="optional"/>
+    <xs:attribute name="textAlign" type="TextAlignEnum" use="optional"/>
+  </xs:complexType>
+
+  <!-- Text alignment enumeration -->
+  <xs:simpleType name="TextAlignEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="left"/>
+      <xs:enumeration value="center"/>
+      <xs:enumeration value="right"/>
+      <xs:enumeration value="justify"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Color styling -->
+  <xs:complexType name="ColorsType">
+    <xs:attribute name="textColor" type="xs:string" use="optional"/>
+    <xs:attribute name="backgroundColor" type="xs:string" use="optional"/>
+    <xs:attribute name="borderColor" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Metadata for text component -->
+  <xs:complexType name="MetadataType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0"/>
+      <xs:element name="Category" type="xs:string" minOccurs="0"/>
+      <xs:element name="Tags" type="TagsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="createdAt" type="xs:dateTime" use="optional"/>
+    <xs:attribute name="updatedAt" type="xs:dateTime" use="optional"/>
+    <xs:attribute name="author" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Tags for categorization -->
+  <xs:complexType name="TagsType">
+    <xs:sequence>
+      <xs:element name="Tag" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema> 

@@ -54,6 +54,11 @@
     <xs:complexContent>
       <xs:extension base="BaseComponentType">
         <xs:attribute name="tag" type="TextTagType" use="optional" default="p"/>
+        <xs:attribute name="textId" type="xs:string" use="optional">
+          <xs:annotation>
+            <xs:documentation>Reference ID to a text component definition. The text renderer will use this ID to fetch the corresponding text content and styling from the text component registry/store.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
