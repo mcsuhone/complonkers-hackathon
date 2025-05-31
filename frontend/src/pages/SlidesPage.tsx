@@ -136,11 +136,11 @@ export const SlidesPage: React.FC = () => {
         {currentSlide && (
           <div className="p-4 bg-gray-50">
             <h3 className="text-sm font-medium mb-2">Notes</h3>
-            <p className="font-semibold mb-1">{currentSlide.title}</p>
+            <p className="font-semibold mb-1">{currentSlide.notes_title}</p>
             <p className="text-sm text-muted-foreground mb-1">
-              {currentSlide.contentDescription}
+              {currentSlide.notes_contentDescription}
             </p>
-            <p className="text-sm">{currentSlide.dataInsights}</p>
+            <p className="text-sm">{currentSlide.notes_dataInsights}</p>
           </div>
         )}
 
@@ -316,13 +316,13 @@ export const SlidesPage: React.FC = () => {
                             Notes
                           </h3>
                           <p className="font-semibold mb-1 text-gray-900">
-                            {currentSlide.title}
+                            {currentSlide.notes_title}
                           </p>
                           <p className="text-sm mb-1 text-gray-900">
-                            {currentSlide.contentDescription}
+                            {currentSlide.notes_contentDescription}
                           </p>
                           <p className="text-sm text-gray-900">
-                            {currentSlide.dataInsights}
+                            {currentSlide.notes_dataInsights}
                           </p>
                         </div>
                       </>

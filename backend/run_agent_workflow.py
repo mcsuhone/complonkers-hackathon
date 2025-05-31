@@ -45,6 +45,7 @@ def safe_parse_json(raw) -> dict:
         return d["job_plan"]
     return d
 
+
 async def run_agent_workflow(
     subject_id: str,
     prompt: str,
@@ -116,8 +117,15 @@ async def _run_agent_workflow(
     
     # 3) Slide idea iteration
     try:
+        # Log raw architect_result for debugging parsing errors
+        logger.info(f"Raw architect_result for {subject_id}: {architect_result}")
+        print(f"Raw architect_result for {subject_id}: {architect_result}")
         parser = etree.XMLParser(remove_blank_text=True)
-        ideas_root = etree.fromstring(architect_result.encode('utf-8'), parser)
+        # Sanitize XML: escape unescaped ampersands to prevent XML parsing errors
+        sanitized_result = re.sub(r'&(?!amp;|lt;|gt;|apos;|quot;|#\d+;)', '&amp;', architect_result)
+        logger.info(f"Sanitized architect_result for {subject_id}: {sanitized_result}")
+        print(f"Sanitized architect_result for {subject_id}: {sanitized_result}")
+        ideas_root = etree.fromstring(sanitized_result.encode('utf-8'), parser)
         logger.info(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         print(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         for slide_idea in ideas_root:  # todo replace with xpath or findall
@@ -143,7 +151,11 @@ async def _run_agent_workflow(
             # Publish each slide result
             await publish_message(subject_id, slide_result)
     except Exception as e:
-        logger.error(f"Error during slide idea iteration: {e}")
+        logger.error(f"Error during slide idea iteration for {subject_id}: {e}")
+        # Log the failing XML string for further inspection
+        logger.error(f"Architect result XML that failed parsing: {architect_result}")
+        # Log full exception stack trace
+        logger.exception("Exception stack trace for slide idea iteration")
 
 
     return architect_result
