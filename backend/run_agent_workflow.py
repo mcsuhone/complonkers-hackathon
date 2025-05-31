@@ -217,14 +217,15 @@ async def _run_agent_workflow(
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
             
-            analyst_agent = get_sequential_agent()
-            slide_result = await run_ai_agent(
-                analyst_agent,  # Reusing interpreter agent for simplicity
-                subject_id=subject_id,
-                initial_state={"slide_xml": analyst_message},
-                message_parts=[analyst_message],
-                app_name=slide_app,
-                output_key="script_agent")
+            else:
+                analyst_agent = get_sequential_agent()
+                slide_result = await run_ai_agent(
+                    analyst_agent,  # Reusing interpreter agent for simplicity
+                    subject_id=subject_id,
+                    initial_state={"slide_xml": analyst_message},
+                    message_parts=[analyst_message],
+                    app_name=slide_app,
+                    output_key="script_output")
             if slide_result is None:
                 logger.error(f"No result from agent {analyst_agent.name} for slide idea in {subject_id}")
                 continue
