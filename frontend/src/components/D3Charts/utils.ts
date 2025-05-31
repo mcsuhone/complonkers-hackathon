@@ -33,6 +33,30 @@ export const generateMockData = (chartType: string, fieldMappings: any[]) => {
         { label: "Category E", value: 10 },
       ];
 
+    case "network":
+      return {
+        nodes: [
+          { id: "A", group: 1, size: 20 },
+          { id: "B", group: 1, size: 15 },
+          { id: "C", group: 2, size: 25 },
+          { id: "D", group: 2, size: 18 },
+        ],
+        links: [
+          { source: "A", target: "B", value: 1 },
+          { source: "B", target: "C", value: 2 },
+          { source: "C", target: "D", value: 1 },
+        ],
+      };
+
+    case "choropleth":
+      return [
+        { country: "USA", gdp: 25000000, continent: "North America" },
+        { country: "China", gdp: 17000000, continent: "Asia" },
+        { country: "Japan", gdp: 5000000, continent: "Asia" },
+        { country: "Germany", gdp: 4000000, continent: "Europe" },
+        { country: "UK", gdp: 3000000, continent: "Europe" },
+      ];
+
     default:
       return Array.from({ length: dataSize }, (_, i) => ({
         category: `Item ${i + 1}`,

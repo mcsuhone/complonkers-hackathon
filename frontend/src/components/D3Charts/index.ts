@@ -4,6 +4,7 @@ export { LineChart } from "./LineChart";
 export { PieChart } from "./PieChart";
 export { ScatterPlot } from "./ScatterPlot";
 export { NetworkChart } from "./NetworkChart";
+export { ChoroplethChart } from "./ChoroplethChart";
 
 // Export utilities
 export { generateMockData, parseChartXML } from "./utils";

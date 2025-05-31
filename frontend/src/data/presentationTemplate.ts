@@ -266,6 +266,39 @@ export const templateTextComponents: TextComponent[] = [
     createdAt: new Date(),
   },
   {
+    id: "title-feature-1",
+    name: "Title Feature 1",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="title-feature-1" name="Title Feature 1">
+  <Content type="static" editable="true">
+    <Text>📊 Company Performance</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "title-feature-2",
+    name: "Title Feature 2",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="title-feature-2" name="Title Feature 2">
+  <Content type="static" editable="true">
+    <Text>🌐 Network Analysis</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "title-feature-3",
+    name: "Title Feature 3",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="title-feature-3" name="Title Feature 3">
+  <Content type="static" editable="true">
+    <Text>🗺️ Geographic Insights</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
     id: "performance-title",
     name: "Performance Analysis Title",
     xml: `<?xml version="1.0" encoding="UTF-8"?>
@@ -286,6 +319,160 @@ export const templateTextComponents: TextComponent[] = [
       <Tag>analysis</Tag>
     </Tags>
   </Metadata>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "performance-subtitle",
+    name: "Performance Analysis Subtitle",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="performance-subtitle" name="Performance Analysis Subtitle">
+  <Content type="static" editable="true">
+    <Text>Revenue vs Profit with Employee Count Visualization</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "performance-insights-title",
+    name: "Performance Insights Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="performance-insights-title" name="Performance Insights Title">
+  <Content type="static" editable="true">
+    <Text>Key Insights</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "network-title",
+    name: "Network Analysis Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="network-title" name="Network Analysis Title">
+  <Content type="static" editable="true">
+    <Text>Organization Network Analysis</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "network-subtitle",
+    name: "Network Analysis Subtitle",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="network-subtitle" name="Network Analysis Subtitle">
+  <Content type="static" editable="true">
+    <Text>Interactive Force-Directed Organizational Structure</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "network-metrics-title",
+    name: "Network Metrics Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="network-metrics-title" name="Network Metrics Title">
+  <Content type="static" editable="true">
+    <Text>Network Metrics</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "global-title",
+    name: "Global Market Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="global-title" name="Global Market Title">
+  <Content type="static" editable="true">
+    <Text>Global Market Analysis</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "global-subtitle",
+    name: "Global Market Subtitle",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="global-subtitle" name="Global Market Subtitle">
+  <Content type="static" editable="true">
+    <Text>World GDP Distribution with Interactive Choropleth Mapping</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-title",
+    name: "Summary Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-title" name="Summary Title">
+  <Content type="static" editable="true">
+    <Text>Key Takeaways &amp; Next Steps</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-performance-title",
+    name: "Summary Performance Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-performance-title" name="Summary Performance Title">
+  <Content type="static" editable="true">
+    <Text>📊 Performance Insights</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-performance-desc",
+    name: "Summary Performance Description",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-performance-desc" name="Summary Performance Description">
+  <Content type="static" editable="true">
+    <Text>Bubble charts reveal complex relationships between revenue, profit, and scale across technology companies.</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-network-title",
+    name: "Summary Network Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-network-title" name="Summary Network Title">
+  <Content type="static" editable="true">
+    <Text>🌐 Network Analysis</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-network-desc",
+    name: "Summary Network Description",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-network-desc" name="Summary Network Description">
+  <Content type="static" editable="true">
+    <Text>Force-directed graphs provide intuitive visualization of organizational structures and relationships.</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-geographic-title",
+    name: "Summary Geographic Title",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-geographic-title" name="Summary Geographic Title">
+  <Content type="static" editable="true">
+    <Text>🗺️ Geographic Intelligence</Text>
+  </Content>
+</TextComponent>`,
+    createdAt: new Date(),
+  },
+  {
+    id: "summary-geographic-desc",
+    name: "Summary Geographic Description",
+    xml: `<?xml version="1.0" encoding="UTF-8"?>
+<TextComponent xmlns="http://www.complonkers-hackathon/text_component" id="summary-geographic-desc" name="Summary Geographic Description">
+  <Content type="static" editable="true">
+    <Text>Choropleth maps enable spatial analysis of global economic data with interactive exploration.</Text>
+  </Content>
 </TextComponent>`,
     createdAt: new Date(),
   },

@@ -4,6 +4,7 @@ import { LineChart } from "./LineChart";
 import { PieChart } from "./PieChart";
 import { ScatterPlot } from "./ScatterPlot";
 import { NetworkChart } from "./NetworkChart";
+import { ChoroplethChart } from "./ChoroplethChart";
 import { generateMockData, parseChartXML } from "./utils";
 import type { D3ChartRendererProps, ChartConfig } from "./types";
 
@@ -16,7 +17,7 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [config, setConfig] = useState<ChartConfig | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any>([]);
   const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
 
   // Handle responsive sizing
@@ -65,7 +66,13 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
       return;
     }
 
+    console.log(
+      "D3ChartRenderer: Parsing XML:",
+      xmlToUse.substring(0, 200) + "..."
+    );
     const parsedConfig = parseChartXML(xmlToUse);
+    console.log("D3ChartRenderer: Parsed config:", parsedConfig);
+
     if (parsedConfig) {
       // Override dimensions with responsive ones
       parsedConfig.dimensions = { ...parsedConfig.dimensions, ...dimensions };
@@ -74,6 +81,7 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
       // Use provided data or generate mock data
       const finalData =
         data || generateMockData(parsedConfig.chartType, parsedConfig.fields);
+      console.log("D3ChartRenderer: Final data:", finalData);
       setChartData(finalData);
     }
   }, [chartId, chartXml, data, dimensions]);
@@ -114,6 +122,10 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
         const networkData = chartData as any;
         return (
           <NetworkChart config={config} data={networkData} svgRef={svgRef} />
+        );
+      case "choropleth":
+        return (
+          <ChoroplethChart config={config} data={chartData} svgRef={svgRef} />
         );
       default:
         return <BarChart config={config} data={chartData} svgRef={svgRef} />;

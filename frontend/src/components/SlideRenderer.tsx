@@ -121,6 +121,8 @@ const renderComponent = (
         const dataSource = chartXmlDoc?.querySelector("DataSource");
         const dataId = dataSource?.getAttribute("dataId");
 
+        console.log(`Chart ${chartId}: dataId=${dataId}`);
+
         // Get data from templateData and ensure it's an array
         const rawData = dataId
           ? templateData[dataId as keyof typeof templateData]
@@ -137,6 +139,8 @@ const renderComponent = (
           // For network data, pass the whole object but D3ChartRenderer will handle it
           chartData = rawData as any;
         }
+
+        console.log(`Chart ${chartId}: chartData=`, chartData);
 
         return (
           <D3ChartRenderer
