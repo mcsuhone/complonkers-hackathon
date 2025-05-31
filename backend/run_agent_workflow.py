@@ -120,16 +120,22 @@ async def _run_agent_workflow(
     try:
         # Log raw architect_result for debugging parsing errors
         logger.info(f"Raw architect_result for {subject_id}: {architect_result}")
-        # Clean XML string by removing any ```xml and ``` markers
-        architect_result = re.sub(r'```xml\s*', '', architect_result)
-        architect_result = re.sub(r'```\s*$', '', architect_result)
+        # Remove all markdown fences including ```xml or ```
+        architect_result = re.sub(r'```(?:xml)?', '', architect_result).strip()
         print(f"Raw architect_result for {subject_id}: {architect_result}")
-        parser = etree.XMLParser(remove_blank_text=True)
+        # Use a recoverable parser to handle minor malformations
+        parser = etree.XMLParser(remove_blank_text=True, recover=True)
         # Sanitize XML: escape unescaped ampersands to prevent XML parsing errors
         sanitized_result = re.sub(r'&(?!amp;|lt;|gt;|apos;|quot;|#\d+;)', '&amp;', architect_result)
         logger.info(f"Sanitized architect_result for {subject_id}: {sanitized_result}")
         print(f"Sanitized architect_result for {subject_id}: {sanitized_result}")
-        ideas_root = etree.fromstring(sanitized_result.encode('utf-8'), parser)
+        # Try parsing, wrap in a root tag on failure to ensure well-formedness
+        try:
+            ideas_root = etree.fromstring(sanitized_result.encode('utf-8'), parser)
+        except etree.XMLSyntaxError:
+            wrapped = f"<root>{sanitized_result}</root>"
+            logger.warning(f"Wrapping XML content in <root> for recovery for {subject_id}")
+            ideas_root = etree.fromstring(wrapped.encode('utf-8'), parser)
         logger.info(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         print(f"Parsed Slide Ideas XML for {subject_id}: {etree.tostring(ideas_root, encoding='unicode', pretty_print=True)}")
         for slide_idea in ideas_root:  # todo replace with xpath or findall
