@@ -5,7 +5,7 @@ from typing import Dict, Any
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool, ToolContext
 
-from app.services.database_service import DatabaseService
+from services.database_service import DatabaseService
 
 import os
 from lxml import etree
