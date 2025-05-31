@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { SlideRenderer } from "@/components/SlideRenderer";
-import { useSlides } from "@/hooks/useSlides";
-import { usePresentation } from "@/hooks/usePresentations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useJobEvents } from "@/hooks/useJobEvents";
+import { usePresentation } from "@/hooks/usePresentations";
+import { useSlides } from "@/hooks/useSlides";
 import {
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Play,
-  Edit,
-  ArrowLeft,
-  Maximize,
   Loader2,
+  Play,
 } from "lucide-react";
-import { useJobEvents } from "@/hooks/useJobEvents";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 export const SlidesPage: React.FC = () => {
   const { presentationId } = useParams<{ presentationId: string }>();
@@ -169,10 +166,6 @@ export const SlidesPage: React.FC = () => {
               <Button variant="outline" onClick={togglePresentation}>
                 <Play className="w-4 h-4 mr-2" />
                 Present
-              </Button>
-              <Button variant="outline">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
               </Button>
             </div>
           </div>

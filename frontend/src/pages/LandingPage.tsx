@@ -7,7 +7,6 @@ import {
   usePresentations,
   useDeletePresentation,
 } from "@/hooks/usePresentations";
-import db from "@/db/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,33 +109,6 @@ export function LandingPage() {
 
   const handleViewPresentation = (id: string) => {
     navigate(`/slides/${id}`);
-  };
-
-  const handleInspectDatabase = async () => {
-    try {
-      console.log("=== DATABASE INSPECTION ===");
-
-      const presentations = await db.presentations.toArray();
-      console.log("Presentations:", presentations);
-
-      const slides = await db.slides.toArray();
-      console.log("Slides:", slides);
-
-      const layouts = await db.layouts.toArray();
-      console.log("Layouts:", layouts);
-
-      const charts = await db.charts.toArray();
-      console.log("Charts:", charts);
-
-      const textComponents = await db.textComponents.toArray();
-      console.log("Text Components:", textComponents);
-
-      console.log("=== END DATABASE INSPECTION ===");
-      alert("Database inspection complete! Check console for details.");
-    } catch (error) {
-      console.error("Database inspection failed:", error);
-      alert("Database inspection failed! Check console for details.");
-    }
   };
 
   return (
@@ -258,15 +230,6 @@ export function LandingPage() {
                     Delete All
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInspectDatabase}
-                  className="flex items-center gap-1"
-                >
-                  <Eye className="h-3 w-3" />
-                  Inspect DB
-                </Button>
               </div>
             </CardTitle>
             <CardDescription>
