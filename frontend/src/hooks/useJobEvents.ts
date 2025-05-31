@@ -45,9 +45,9 @@ export function useJobEvents(jobId: string) {
           presentationId: jobId,
           index: idx,
           slideId: idea.slideId,
-          title: idea.title,
-          contentDescription: idea.contentDescription,
-          dataInsights: idea.dataInsights,
+          notes_title: idea.title,
+          notes_contentDescription: idea.contentDescription,
+          notes_dataInsights: idea.dataInsights,
         }));
         await slidesService.createMany(ideaSlides);
         console.log("Debug: Inserted SlideIdeas into DB");
