@@ -106,7 +106,7 @@ async def _run_agent_workflow(
         app_name=architect_app
     )
     if architect_result is None:
-        logger.error(f"No result from agent {architect_agent.name} for {subject_id}")
+        logger.error(f"No result from agent for {subject_id}")
         return None
 
     # Publish architect output
@@ -119,6 +119,9 @@ async def _run_agent_workflow(
     try:
         # Log raw architect_result for debugging parsing errors
         logger.info(f"Raw architect_result for {subject_id}: {architect_result}")
+        # Clean XML string by removing any ```xml and ``` markers
+        architect_result = re.sub(r'```xml\s*', '', architect_result)
+        architect_result = re.sub(r'```\s*$', '', architect_result)
         print(f"Raw architect_result for {subject_id}: {architect_result}")
         parser = etree.XMLParser(remove_blank_text=True)
         # Sanitize XML: escape unescaped ampersands to prevent XML parsing errors
