@@ -1,3 +1,5 @@
+from typing import Optional
+
 import json
 import logging
 from google.adk.sessions import InMemorySessionService
@@ -13,6 +15,7 @@ async def run_ai_agent(
     initial_state: dict,
     message_parts: list[str],
     app_name: str,
+    output_key: Optional[str] = None
 ):
     """
     Generic wrapper to run a Google ADK agent and return the result.
@@ -49,5 +52,7 @@ async def run_ai_agent(
         logger.error(f"Final session not found for job {subject_id}")
         return None
 
-    result = final_session.state.get(agent.output_key)
+    if output_key is None:
+        output_key = agent.output_key
+    result = final_session.state.get(output_key)
     return result
