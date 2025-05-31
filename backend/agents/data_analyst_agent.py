@@ -13,8 +13,7 @@ from services.database_service import DatabaseService
 
 from visualizer import visualizer_tool
 
-from .services.database_service import DatabaseService
-from .lib import load_xml_output_schema
+from lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
