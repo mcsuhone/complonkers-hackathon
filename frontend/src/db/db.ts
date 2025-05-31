@@ -60,7 +60,7 @@ class AppDB extends Dexie {
     this.version(1).stores({
       presentations: "id, createdAt",
       slides: "++id, presentationId, index, slideId",
-      layouts: "id, createdAt",
+      layouts: "id, slideId, createdAt",
       charts: "id, type, createdAt",
       textComponents: "id, createdAt",
     });

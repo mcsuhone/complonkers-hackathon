@@ -41,12 +41,14 @@ export const layoutsService = {
     await db.layouts.clear();
   },
 
-  // Get layout by associated slideId
+  // Get layout by associated slideId (newest by createdAt)
   getBySlideId: async (slideId: string): Promise<Layout | undefined> => {
-    // Use filter since slideId may not be indexed
+    // Return the newest layout record for this slideId
     const layouts = await db.layouts
-      .filter((l) => l.slideId === slideId)
-      .toArray();
-    return layouts.length > 0 ? layouts[0] : undefined;
+      .where("slideId")
+      .equals(slideId)
+      .sortBy("createdAt");
+    if (layouts.length === 0) return undefined;
+    return layouts[layouts.length - 1];
   },
 };

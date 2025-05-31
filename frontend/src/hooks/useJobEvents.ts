@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { slidesService } from "@/db";
+import { slidesService, layoutsService } from "@/db";
 import { useQueryClient } from "@tanstack/react-query";
 import { slideKeys } from "@/hooks/useSlides";
+import { layoutKeys } from "@/hooks/useLayouts";
+import { parseSlideIdeasXml, parseSlideLayoutsXml } from "@/lib/xmlParsers";
 
 /**
  * Hook to listen to SSE events for a given jobId.
@@ -34,53 +36,48 @@ export function useJobEvents(jobId: string) {
       }
       // Detect SlideIdeas XML
       if (payload.trim().startsWith("<SlideIdeas")) {
-        // Process slide ideas XML
+        // Parse and insert SlideIdeas
+        const ideas = parseSlideIdeasXml(payload);
+        console.log("Debug: Parsed SlideIdeas count:", ideas.length);
+        // Replace slides for this presentation
+        await slidesService.deleteByPresentationId(jobId);
+        console.log("Debug: Cleared slides for presentation:", jobId);
+        const ideaSlides = ideas.map((idea, idx) => ({
+          presentationId: jobId,
+          index: idx,
+          slideId: idea.slideId,
+          title: idea.title,
+          contentDescription: idea.contentDescription,
+          dataInsights: idea.dataInsights,
+        }));
+        await slidesService.createMany(ideaSlides);
+        console.log("Debug: Inserted SlideIdeas into DB");
+        queryClient.invalidateQueries({
+          queryKey: slideKeys.byPresentation(jobId),
+        });
+      } else if (payload.trim().startsWith("<SlideDeck")) {
+        // Process SlideDeck (layout) XML
         try {
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(payload, "application/xml");
-          const namespace = "http://www.complonkers-hackathon/slide_ideas";
-          // Collect all SlideIdea elements in the slide_ideas namespace
-          let slideIdeaElems = Array.from(
-            xmlDoc.getElementsByTagNameNS(namespace, "SlideIdea")
-          );
-          // Fallback to non-namespace search if none found
-          if (slideIdeaElems.length === 0) {
-            slideIdeaElems = Array.from(
-              xmlDoc.getElementsByTagName("SlideIdea")
-            );
-          }
-          console.log(
-            "Debug: Parsed SlideIdea elements count:",
-            slideIdeaElems.length
-          );
-          // Replace slides for this presentation
-          console.log(
-            "Debug: Deleting existing slides for presentation:",
-            jobId
-          );
-          await slidesService.deleteByPresentationId(jobId);
-          console.log(
-            "Debug: Deleted existing slides for presentation:",
-            jobId
-          );
-          const newSlides = slideIdeaElems.map((el, idx) => ({
-            presentationId: jobId,
-            index: idx,
-            slideId: el.querySelector("SlideId")?.textContent || "",
-            title: el.querySelector("Title")?.textContent || "",
-            contentDescription:
-              el.querySelector("ContentDescription")?.textContent || "",
-            dataInsights: el.querySelector("DataInsights")?.textContent || "",
+          const layouts = parseSlideLayoutsXml(payload);
+          console.log("Debug: Parsed SlideDeck layouts count:", layouts.length);
+          // Insert layouts
+          const layoutRecords = layouts.map((l) => ({
+            id: l.slideId,
+            slideId: l.slideId,
+            name: l.slideId,
+            xml: l.xml,
+            createdAt: new Date(),
           }));
-          console.log("Debug: Prepared newSlides to insert:", newSlides);
-          await slidesService.createMany(newSlides);
-          console.log("Debug: Successfully inserted newSlides into IndexedDB");
-          // Trigger refetch of slides for this presentation
-          queryClient.invalidateQueries({
-            queryKey: slideKeys.byPresentation(jobId),
+          await layoutsService.createMany(layoutRecords);
+          console.log("Debug: Inserted layouts into DB");
+          // Invalidate for each slideId
+          layouts.forEach((l) => {
+            queryClient.invalidateQueries({
+              queryKey: layoutKeys.bySlideId(l.slideId),
+            });
           });
         } catch (err) {
-          console.error("Error processing SlideIdeas XML:", err);
+          console.error("Error processing SlideDeck XML:", err);
         }
       } else {
         // Keep other events for debugging
