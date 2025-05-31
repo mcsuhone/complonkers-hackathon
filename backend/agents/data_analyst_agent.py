@@ -131,6 +131,9 @@ def get_data_analyst_instructions():
 
     4.  FEASIBILITY:
         *   Ensure the requested data and visualizations are reasonably derivable from the provided database schemas.
+        
+    HERE IS THE DATABASE SCHEMA:
+    {schemas}
 
     OUTPUT REQUIREMENTS:
     Your SOLE output must be a single, valid XML string that conforms to 'slide_schema.xsd'. This XML string will represent the structure of one or more slides.
