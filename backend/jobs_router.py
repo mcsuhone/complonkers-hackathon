@@ -2,7 +2,7 @@ import uuid
 import json
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 
@@ -62,10 +62,15 @@ class PushDummyRequest(BaseModel):
 
 
 @router.post("/pushDummy")
-async def push_dummy(request: PushDummyRequest):
+async def push_dummy(body: PushDummyRequest):
     """
-    TODO: Dummy endpoint to push test messages into the Redis stream.
+    Dummy endpoint to push test messages into the Redis queue for the given job.
     """
-    logger.info(f"POST /api/pushDummy called with jobId={request.jobId}, payload={request.payload}")
-    await publish_message(request.jobId, json.dumps(request.payload))
-    return {"status": "ok"} 
+    logger.info(f"POST /api/pushDummy called with jobId={body.jobId}, payload={body.payload}")
+    try:
+        await publish_message(body.jobId, json.dumps(body.payload))
+        logger.info(f"Published dummy message to queue events:{body.jobId}")
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Failed to publish dummy message for job {body.jobId}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to publish dummy message") 
