@@ -40,6 +40,10 @@ export interface Slide {
   presentationId: string;
   index: number;
   layoutId: string;
+  slideId: string;
+  title: string;
+  contentDescription: string;
+  dataInsights: string;
 }
 
 class AppDB extends Dexie {
@@ -55,7 +59,7 @@ class AppDB extends Dexie {
     // Version 1: Complete schema with all tables
     this.version(1).stores({
       presentations: "id, createdAt",
-      slides: "++id, presentationId, index, layoutId",
+      slides: "++id, presentationId, index, layoutId, slideId",
       layouts: "id, createdAt",
       charts: "id, type, createdAt",
       textComponents: "id, createdAt",

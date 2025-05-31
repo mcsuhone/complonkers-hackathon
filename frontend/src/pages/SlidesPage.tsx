@@ -13,6 +13,7 @@ import {
   Edit,
   ArrowLeft,
   Maximize,
+  Loader2,
 } from "lucide-react";
 import { useJobEvents } from "@/hooks/useJobEvents";
 
@@ -72,19 +73,6 @@ export const SlidesPage: React.FC = () => {
     setIsPresentation(!isPresentation);
   };
 
-  if (presentationLoading || slidesLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">⏳</div>
-          <div className="text-sm text-muted-foreground">
-            Loading presentation...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (presentationError || slidesError || !presentation) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -94,27 +82,6 @@ export const SlidesPage: React.FC = () => {
             {presentationError?.message ||
               slidesError?.message ||
               "Presentation not found"}
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/")}
-            className="mt-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (slides.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-muted-foreground mb-2">📄</div>
-          <div className="text-sm text-muted-foreground">
-            No slides found for this presentation
           </div>
           <Button
             variant="outline"
@@ -167,6 +134,18 @@ export const SlidesPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Slide Notes */}
+        {currentSlide && (
+          <div className="p-4 bg-gray-50">
+            <h3 className="text-sm font-medium mb-2">Notes</h3>
+            <p className="font-semibold mb-1">{currentSlide.title}</p>
+            <p className="text-sm text-muted-foreground mb-1">
+              {currentSlide.contentDescription}
+            </p>
+            <p className="text-sm">{currentSlide.dataInsights}</p>
+          </div>
+        )}
 
         {/* Navigation Controls */}
         <div className="bg-black/80 p-4 flex justify-center space-x-4">
@@ -282,49 +261,71 @@ export const SlidesPage: React.FC = () => {
           <div className="lg:col-span-3">
             <Card className="h-fit">
               <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    <h2 className="text-lg font-medium">
-                      Slide {currentSlideIndex + 1}
-                    </h2>
+                {/* Slide Header & Controls (hidden when no slides) */}
+                {slides.length > 0 && (
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-lg font-medium">
+                        Slide {currentSlideIndex + 1}
+                      </h2>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={prevSlide}
+                        disabled={currentSlideIndex === 0}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={nextSlide}
+                        disabled={currentSlideIndex === slides.length - 1}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={togglePresentation}
+                      >
+                        <Maximize className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={prevSlide}
-                      disabled={currentSlideIndex === 0}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={nextSlide}
-                      disabled={currentSlideIndex === slides.length - 1}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={togglePresentation}
-                    >
-                      <Maximize className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                )}
 
-                {/* Slide Content */}
+                {/* Slide Content or Loading Spinner */}
                 <div className="border rounded-lg overflow-hidden bg-white">
                   <div className="aspect-video">
-                    {currentSlide && (
+                    {presentationLoading ||
+                      (slidesLoading && (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-muted-foreground text-2xl animate-spin">
+                            <Loader2 className="w-10 h-10" />
+                          </div>
+                        </div>
+                      ))}
+                    {slides.length > 0 && currentSlide && (
                       <SlideRenderer
                         layoutId={currentSlide.layoutId}
                         className="w-full h-full"
                       />
                     )}
                   </div>
+                  {/* Slide Notes (shown when slides exist) */}
+                  {slides.length > 0 && currentSlide && (
+                    <div className="p-4 bg-gray-50">
+                      <h3 className="text-sm font-medium mb-2">Notes</h3>
+                      <p className="font-semibold mb-1">{currentSlide.title}</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {currentSlide.contentDescription}
+                      </p>
+                      <p className="text-sm">{currentSlide.dataInsights}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
