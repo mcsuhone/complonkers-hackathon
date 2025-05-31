@@ -16,7 +16,7 @@ from google.adk.runners import Runner
 from google.genai import types as genai_types
 
 # Local imports
-from services.database_service import DatabaseService
+from .services.database_service import DatabaseService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +42,7 @@ class Config:
     XML_NAMESPACE = {
         "ns": "http://www.complonkers-hackathon/slide_ideas"
     }
-    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_ideas.xsd")
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "schemas", "slide_ideas.xsd")
     
     # Database Placeholders
     PLACEHOLDER_DBS = ["your_db_name", "test_db_placeholder"]
