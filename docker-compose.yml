@@ -57,7 +57,7 @@ services:
       - app-network
 
 volumes:
-  #postgres_data_v0.1:
+  postgres_data_v0.1:
   redis_data:
 
 networks:
