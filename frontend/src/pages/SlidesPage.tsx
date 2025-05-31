@@ -100,29 +100,6 @@ export const SlidesPage: React.FC = () => {
   if (isPresentation) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col">
-        {/* Presentation Header */}
-        <div className="bg-black/80 text-white p-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={togglePresentation}
-              className="text-white hover:bg-white/20"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Exit
-            </Button>
-            <span className="text-sm">
-              {presentation.prompt || "Untitled Presentation"}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary">
-              {currentSlideIndex + 1} / {slides.length}
-            </Badge>
-          </div>
-        </div>
-
         {/* Slide Content */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full h-full max-w-7xl border rounded-lg overflow-hidden bg-white">
@@ -131,18 +108,6 @@ export const SlidesPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Slide Notes */}
-        {currentSlide && (
-          <div className="p-4 bg-gray-50">
-            <h3 className="text-sm font-medium mb-2">Notes</h3>
-            <p className="font-semibold mb-1">{currentSlide.notes_title}</p>
-            <p className="text-sm text-muted-foreground mb-1">
-              {currentSlide.notes_contentDescription}
-            </p>
-            <p className="text-sm">{currentSlide.notes_dataInsights}</p>
-          </div>
-        )}
 
         {/* Navigation Controls */}
         <div className="bg-black/80 p-4 flex justify-center space-x-4">
@@ -259,8 +224,8 @@ export const SlidesPage: React.FC = () => {
             {/* Slide Content and Notes */}
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Slide panel */}
-              <div className="flex-1 border rounded-lg overflow-hidden bg-white">
-                <div className="aspect-video">
+              <div className="flex-1 overflow-hidden">
+                <div className="aspect-video rounded-lg overflow-hidden">
                   {presentationLoading ||
                     (slidesLoading && (
                       <div className="flex items-center justify-center h-full">
@@ -284,17 +249,15 @@ export const SlidesPage: React.FC = () => {
           <CardContent>
             {/* Notes panel */}
             {slides.length > 0 && currentSlide && (
-              <div className="w-full border rounded-lg bg-gray-50 p-4 flex flex-col">
-                <h3 className="text-sm font-medium mb-2 text-gray-900">
-                  Notes
-                </h3>
-                <p className="font-semibold mb-1 text-gray-900">
+              <div className="w-full border rounded-lg bg-gray-900 p-4 flex flex-col">
+                <h3 className="text-sm font-medium mb-2 text-white">Notes</h3>
+                <p className="font-semibold mb-1 text-white">
                   {currentSlide.notes_title}
                 </p>
-                <p className="text-sm mb-1 text-gray-900">
+                <p className="text-sm mb-1 text-white">
                   {currentSlide.notes_contentDescription}
                 </p>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-white">
                   {currentSlide.notes_dataInsights}
                 </p>
               </div>

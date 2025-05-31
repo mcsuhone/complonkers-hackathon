@@ -10,7 +10,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from google.adk.tools import FunctionTool
 from .services.database_service import DatabaseService
-
+from .lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
@@ -81,8 +81,13 @@ CodeInterpreterTool = CrewaiTool(
 # DEFINE AGENT
 ########################################################
 
+
+SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
+
+SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
+
 # Instructions for the data analyst agent
-DATA_ANALYST_INSTRUCTIONS = """
+DATA_ANALYST_INSTRUCTIONS = f"""
 You are a highly skilled data analyst agent. Your primary mission is to translate slide concepts, provided in a 'slide_ideas.xml' format, into a structured 'slide_schema.xml' presentation layout. You will use available database schemas to understand how to fetch the necessary data.
 
 INPUT:
@@ -123,7 +128,7 @@ Your SOLE output must be a single, valid XML string that conforms to 'slide_sche
 -   The 'id' attributes for slides and components should be meaningful (e.g., derived from 'SlideId' or descriptive of content).
 -   The 'Content' element within each 'Chart' or 'Text' component in your generated 'slide_schema.xml' MUST be a descriptive placeholder for the data. This placeholder will guide the `script_agent` in fetching and injecting the actual data.
     Example for a Chart:
-    <Chart type="pie" id="salesDistributionChart" classes="w-1/2 h-64">
+    <Chart type="pie" id="salesDistributionChart" classes="">
       <Content>Pie chart showing sales distribution by product category for the last quarter. Requires: product category, total sales amount per category.</Content>
     </Chart>
 
@@ -138,6 +143,18 @@ Your SOLE output must be a single, valid XML string that conforms to 'slide_sche
 -   Do NOT invent data. Your role is to define the structure and specify WHAT data is needed for the `script_agent`.
 -   The 'Content' elements are crucial for the `script_agent`. Make them clear and precise.
 -   The output must be ONLY the XML string. Do not include any other explanatory text, greetings, or markdown formatting around the XML.
+-   Use the tailwind classes to have dynamic good looking slides.
+        - For the outer most element, always define a background and some padding. py-8 px-16 are good values.
+        - Make sure text has a good font size and colors. Colors should be opposite to the background.
+        - You can use different shades and colors of backgrounds but be professional with those.
+-   Dont put more than 2 charts per slide.
+-   Keep the slides short and concise.
+-   Focus a lot on the wording and make the wording analytical and smart. Imagine being a CEO Presenting to the board.
+
+THIS IS THE ENTIRE SCHEMA YOU CAN USE:
+
+{SCHEMA}
+
 """
 
 SCRIPT_INSTRUCTIONS = """

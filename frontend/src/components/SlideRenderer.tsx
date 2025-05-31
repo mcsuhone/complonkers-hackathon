@@ -290,8 +290,102 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   const slideClasses = slideElement.getAttribute("classes") || "";
   const children = Array.from(slideElement.children);
 
+  // Dynamic layout based on chart count
+  const chartEls = children.filter((el) => el.tagName === "Chart");
+  const titleEls = children.filter(
+    (el) =>
+      el.tagName === "Title" ||
+      (el.tagName === "Text" && el.getAttribute("tag") === "h1")
+  );
+  if (chartEls.length === 1) {
+    const otherEls = children.filter((el) => !titleEls.includes(el));
+    const firstChart = chartEls[0];
+    const preText = otherEls
+      .slice(0, otherEls.indexOf(firstChart))
+      .filter((el) => el.tagName === "Text");
+    const postText = otherEls
+      .slice(otherEls.indexOf(firstChart) + 1)
+      .filter((el) => el.tagName === "Text");
+    return (
+      <div
+        className={`${slideClasses} ${className} grid grid-cols-2 gap-4 text-gray-900`}
+      >
+        {titleEls.map((el, idx) => (
+          <div
+            key={el.getAttribute("id") ?? `title-${idx}`}
+            className="col-span-2"
+          >
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+        {preText.map((el, idx) => (
+          <div key={el.getAttribute("id") ?? `pre-${idx}`}>
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+        <div key={firstChart.getAttribute("id") ?? "chart-0"}>
+          {renderComponent(firstChart, textComponents, charts)}
+        </div>
+        {postText.map((el, idx) => (
+          <div
+            key={el.getAttribute("id") ?? `post-${idx}`}
+            className="col-span-2"
+          >
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (chartEls.length === 2) {
+    const [firstChart, secondChart] = chartEls;
+    const firstIdx = children.indexOf(firstChart);
+    const secondIdx = children.indexOf(secondChart);
+    const textBefore = children.filter(
+      (el) =>
+        el.tagName === "Text" &&
+        !titleEls.includes(el) &&
+        children.indexOf(el) < firstIdx
+    );
+    const textAfter = children.filter(
+      (el) => el.tagName === "Text" && children.indexOf(el) > secondIdx
+    );
+    return (
+      <div
+        className={`${slideClasses} ${className} grid grid-cols-2 gap-4 text-gray-900`}
+      >
+        {titleEls.map((el, idx) => (
+          <div
+            key={el.getAttribute("id") ?? `title-${idx}`}
+            className="col-span-2"
+          >
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+        {textBefore.map((el, idx) => (
+          <div key={el.getAttribute("id") ?? `tb-${idx}`}>
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+        {chartEls.map((el) => (
+          <div key={el.getAttribute("id") ?? `chart-${el.getAttribute("id")}`}>
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+        {textAfter.map((el, idx) => (
+          <div
+            key={el.getAttribute("id") ?? `ta-${idx}`}
+            className="col-span-2"
+          >
+            {renderComponent(el, textComponents, charts)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  // Default layout
   return (
-    <div className={`${slideClasses} ${className}`}>
+    <div className={`${slideClasses} ${className} text-gray-900`}>
       {children.map((child, index) =>
         renderComponent(child, textComponents, charts)
       )}
