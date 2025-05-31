@@ -260,6 +260,7 @@ def get_script_agent():
         description="An AI agent specialized in generating, running, and saving results from scripts, and using visualization tools.",
         instruction=get_script_instructions(),
         tools=[FileWritingTool, CodeInterpreterTool, execute_sql_query, visualizer_tool],
+        output_key='script_output'
     )
 
 def get_sequential_agent():
