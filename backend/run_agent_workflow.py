@@ -13,9 +13,10 @@ def safe_json_dumps(obj):
     try:
         return json.dumps(obj)
     except (TypeError, ValueError):
+        print('Error serializing object to JSON:', obj)
         return str(obj)
 
-def safe_parse_json(raw):
+def safe_parse_json(raw) -> dict:
     if isinstance(raw, dict):
         return raw
     if not isinstance(raw, str):
@@ -92,10 +93,8 @@ async def run_agent_workflow(
         return None
 
     # Publish architect output
-    try:
-        arch_payload = json.dumps(architect_result)
-    except (TypeError, ValueError):
-        arch_payload = str(architect_result)
+    print(f"Architect result: {architect_result}")
+    arch_payload = safe_json_dumps(architect_result)
     await publish_message(subject_id, arch_payload)
 
     return architect_result
