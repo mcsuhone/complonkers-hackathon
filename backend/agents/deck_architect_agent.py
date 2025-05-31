@@ -42,7 +42,7 @@ class Config:
     XML_NAMESPACE = {
         "ns": "http://www.complonkers-hackathon/slide_ideas"
     }
-    SCHEMA_RELATIVE_PATH = os.path.join("..", "schemas", "slide_ideas.xsd")
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_ideas.xsd")
     
     # Database Placeholders
     PLACEHOLDER_DBS = ["your_db_name", "test_db_placeholder"]
