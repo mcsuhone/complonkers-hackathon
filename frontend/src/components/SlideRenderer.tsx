@@ -80,28 +80,29 @@ const renderComponent = (
         }
       }
       // Create the appropriate HTML element based on tag
+      console.log("classes", classes);
       switch (tag) {
         case "h1":
           return (
-            <h1 key={id} className={cn("text-gray-900", classes)}>
+            <h1 key={id} className={cn("text-gray-900", classes.toString())}>
               {content}
             </h1>
           );
         case "h2":
           return (
-            <h2 key={id} className={cn("text-gray-900", classes)}>
+            <h2 key={id} className={cn("text-gray-900", classes.toString())}>
               {content}
             </h2>
           );
         case "h3":
           return (
-            <h3 key={id} className={cn("text-gray-900", classes)}>
+            <h3 key={id} className={cn("text-gray-900", classes.toString())}>
               {content}
             </h3>
           );
         default:
           return (
-            <p key={id} className={cn("text-gray-900", classes)}>
+            <p key={id} className={cn("text-gray-900", classes.toString())}>
               {content}
             </p>
           );
@@ -164,7 +165,7 @@ const renderComponent = (
             key={id}
             chartXml={charts[chartComponentId].xml}
             data={chartData}
-            className={classes}
+            className={classes.toString()}
           />
         );
       }
@@ -174,7 +175,7 @@ const renderComponent = (
       return (
         <div
           key={id}
-          className={`${classes} flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300`}
+          className={`${classes.toString()} flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300`}
         >
           <div className="text-center">
             <div className="text-4xl mb-2">📊</div>
@@ -191,7 +192,10 @@ const renderComponent = (
 
       const ListComponent = ordered ? "ol" : "ul";
       return (
-        <ListComponent key={id} className={cn("text-gray-900", classes)}>
+        <ListComponent
+          key={id}
+          className={cn("text-gray-900", classes.toString())}
+        >
           {items.map((item, index) => (
             <li key={index}>
               {item.replace(/^[•\-\*]\s*/, "").replace(/^\d+\.\s*/, "")}
@@ -204,7 +208,7 @@ const renderComponent = (
     case "Container": {
       const children = Array.from(element.children);
       return (
-        <div key={id} className={classes}>
+        <div key={id} className={classes.toString()}>
           {children.map((child, index) =>
             renderComponent(child, textComponents, charts)
           )}
@@ -308,7 +312,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       .filter((el) => el.tagName === "Text");
     return (
       <div
-        className={`${slideClasses} ${className} grid grid-cols-2 gap-4 text-gray-900`}
+        className={cn(
+          slideClasses.toString(),
+          className,
+          "grid grid-cols-2 gap-4 text-gray-900"
+        )}
       >
         {titleEls.map((el, idx) => (
           <div
@@ -352,7 +360,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     );
     return (
       <div
-        className={`${slideClasses} ${className} grid grid-cols-2 gap-4 text-gray-900`}
+        className={cn(
+          slideClasses.toString(),
+          className,
+          "grid grid-cols-2 gap-4 text-gray-900"
+        )}
       >
         {titleEls.map((el, idx) => (
           <div
@@ -385,7 +397,13 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   }
   // Default layout
   return (
-    <div className={`${slideClasses} ${className} text-gray-900`}>
+    <div
+      className={cn(
+        slideClasses.toString(),
+        className.toString(),
+        "text-gray-900"
+      )}
+    >
       {children.map((child, index) =>
         renderComponent(child, textComponents, charts)
       )}
