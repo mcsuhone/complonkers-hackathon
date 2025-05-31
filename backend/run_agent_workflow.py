@@ -3,6 +3,7 @@ import logging
 import re
 from agent_utils.run_ai_agent import run_ai_agent
 from agents.data_analyst_agent import get_analyst_agent
+from backend.agents.data_analyst_agent import get_sequential_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
 from agents.deck_architect_agent import deck_architect_agent
@@ -106,7 +107,7 @@ async def _run_agent_workflow(
         app_name=architect_app
     )
     if architect_result is None:
-        logger.error(f"No result from agent for {subject_id}")
+        logger.error(f"No result from agent {deck_architect_agent.name} for {subject_id}")
         return None
 
     # Publish architect output
@@ -140,7 +141,7 @@ async def _run_agent_workflow(
             
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
-            analyst_agent = get_analyst_agent()
+            analyst_agent = get_sequential_agent()
             slide_result = await run_ai_agent(
                 analyst_agent,  # Reusing interpreter agent for simplicity
                 subject_id=subject_id,
