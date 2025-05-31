@@ -54,5 +54,6 @@ async def run_ai_agent(
 
     if output_key is None:
         output_key = agent.output_key
+
     result = final_session.state.get(output_key)
     return result
