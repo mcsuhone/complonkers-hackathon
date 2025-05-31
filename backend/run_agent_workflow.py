@@ -5,7 +5,7 @@ from agent_utils.run_ai_agent import run_ai_agent
 from agents.data_analyst_agent import analyst_agent
 from redis_utils.redis_stream import publish_message
 from agents.interpreter_agent import job_interpreter_agent
-from agents.simple_deck_architect_agent import simple_deck_architect_agent
+from agents.deck_architect_agent import deck_architect_agent
 from json import JSONDecodeError
 from lxml import etree
 
@@ -98,14 +98,14 @@ async def _run_agent_workflow(
     architect_message = f"Generate presentation outline with the following state: {json.dumps(architect_state)}"
     architect_app = "simple_deck_architect_app"
     architect_result = await run_ai_agent(
-        simple_deck_architect_agent,
+        deck_architect_agent,
         subject_id=subject_id,
         initial_state=architect_state,
         message_parts=[architect_message],
         app_name=architect_app
     )
     if architect_result is None:
-        logger.error(f"No result from agent {simple_deck_architect_agent.name} for {subject_id}")
+        logger.error(f"No result from agent {architect_agent.name} for {subject_id}")
         return None
 
     # Publish architect output
