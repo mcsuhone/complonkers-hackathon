@@ -25,7 +25,7 @@ DB_PARAMS = {
     'user': 'postgres',
     'password': 'postgres',
     'host': 'localhost', # Assuming your Docker DB is running on localhost
-    'port': '5432'
+    'port': 5432
 }
 
 
@@ -266,8 +266,6 @@ def get_sequential_agent():
         name="data_analyst_and_script_agent",
         sub_agents=[get_analyst_agent(), get_script_agent()]
     )
-
-# db_service = DatabaseService(DB_PARAMS)
 
 if __name__ == "__main__":
     os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"

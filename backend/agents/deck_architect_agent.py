@@ -80,7 +80,6 @@ db_schema_tool = FunctionTool(
     func=get_database_schema
 )
 
-
 # Agent Prompts
 DECK_ARCHITECT_PROMPT = f"""You are an AI assistant that generates business presentation slide outlines.
 
