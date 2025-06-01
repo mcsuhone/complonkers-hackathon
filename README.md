@@ -16,7 +16,6 @@ The result is clear, persuasive storytelling adapted to the goals, values, and k
 - Automatic presentation structure creation
 - AI-powered slide content generation
 - Data visualization and insights generation
-- Performance metrics and analytics
 
 ## Tech Stack
 
@@ -34,7 +33,7 @@ The system consists of:
 2. **Deck Architect Agent** - Generates presentation outlines and structure
 3. **Data Analyst Agent** - Analyses the data and generates slide content based on the insights
 5. **Code Runner Agent** - Runs the queries requested by the Data Analytics Agent
-4. **Visualization Agent/Tool** - Produces charts and graphics based on the provided data and instructions
+4. **Visualization Tool** - Converts data and instructions into xml format readable by frontend
 
 ### Agentic Workflow
 
@@ -54,4 +53,11 @@ Development setup:
 1. Set up `GOOGLE_API_KEY` in the `.env` file.
 2. Run `docker compose up -d --build` to begin backend development
 3. Install `node` and `pnpm` and run `pnpm run dev` to launch frontend
+
+## Sample prompts
+
+Example topics for the chinook dataset:
+
+- Create a summary of music played around the world. Audience: students
+- Present the most cuurently promising artists/genres. Audience: music distribution company's management
 
