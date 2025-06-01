@@ -1,145 +1,97 @@
-import React, { useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
-import type { ChartRendererProps } from "./types";
 
-export const BarChart: React.FC<ChartRendererProps> = ({
-  config,
+export type BarChartData = {
+  label: string;
+  value: number;
+};
+
+interface BarChartProps {
+  data: BarChartData[];
+  width?: number;
+  height?: number;
+  margin?: { top: number; right: number; bottom: number; left: number };
+}
+
+export const BarChart: React.FC<BarChartProps> = ({
   data,
-  svgRef,
+  width = 500,
+  height = 300,
+  margin = { top: 20, right: 30, bottom: 40, left: 40 },
 }) => {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+
+  console.log("data", data);
+
   useEffect(() => {
-    if (!svgRef.current || !data.length) return;
+    if (!chartContainerRef.current) {
+      console.log(
+        "BarChart: chartContainerRef.current is null on effect setup."
+      );
+      return;
+    }
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+    const container = d3.select(chartContainerRef.current);
 
-    const { width, height } = config.dimensions;
-    const { margin } = config;
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    // Clear previous SVG to ensure a clean slate on re-renders
+    container.select("svg").remove(); // Target the SVG specifically
 
-    // Determine if data is multi-series (grouped bars)
-    const keys =
-      data.length > 0
-        ? Object.keys(data[0]).filter((k) => k !== "category")
-        : [];
-    if (keys.length <= 1) {
-      // Filter out invalid data and ensure numeric values
-      const validData = data
-        .filter((d) => {
-          const value = Number(d.value);
-          return !isNaN(value) && isFinite(value) && value >= 0;
-        })
-        .map((d) => ({
-          ...d,
-          value: Number(d.value) || 0,
-          category: d.category || d.label || "Unknown",
-        }));
-      if (validData.length === 0) {
-        // Show "No data" message
-        svg
-          .append("text")
-          .attr("x", width / 2)
-          .attr("y", height / 2)
-          .attr("text-anchor", "middle")
-          .style("font-size", "14px")
-          .style("fill", "#666")
-          .text("No valid data to display");
-        return;
+    const svg = container
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("max-width", "100%")
+      .style("height", "auto");
+
+    const xScale = d3
+      .scaleBand()
+      .domain(data.map((d) => d.label))
+      .range([margin.left, width - margin.right])
+      .padding(0.1);
+
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(data, (d) => d.value) || 0])
+      .nice()
+      .range([height - margin.bottom, margin.top]);
+
+    svg
+      .selectAll(".bar")
+      .data(data)
+      .join("rect")
+      .attr("class", "bar")
+      .attr("x", (d) => xScale(d.label) || 0)
+      .attr("y", (d) => yScale(d.value))
+      .attr("width", xScale.bandwidth())
+      .attr("height", (d) => height - margin.bottom - yScale(d.value))
+      .attr("fill", "steelblue");
+
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale));
+
+    svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yScale));
+
+    // Cleanup function to remove the specific SVG element
+    return () => {
+      console.log(
+        "BarChart: Cleanup - chartContainerRef.current:",
+        chartContainerRef.current
+      );
+      if (chartContainerRef.current) {
+        d3.select(chartContainerRef.current).select("svg").remove(); // Target the SVG specifically for removal
       }
-      const x = d3
-        .scaleBand()
-        .domain(validData.map((d) => d.category))
-        .range([0, innerWidth])
-        .padding(0.1);
-      const maxValue = d3.max(validData, (d) => d.value) || 0;
-      const y = d3
-        .scaleLinear()
-        .domain([0, maxValue])
-        .nice()
-        .range([innerHeight, 0]);
-      const color = d3.scaleOrdinal(d3.schemeCategory10);
-      const g = svg
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-      // Add bars
-      g.selectAll(".bar")
-        .data(validData)
-        .enter()
-        .append("rect")
-        .attr("class", "bar")
-        .attr("x", (d) => x(d.category) || 0)
-        .attr("y", (d) => y(d.value))
-        .attr("width", x.bandwidth())
-        .attr("height", (d) => Math.max(0, innerHeight - y(d.value)))
-        .attr("fill", (d, i) => color(i.toString()));
-      // Add axes
-      g.append("g")
-        .attr("transform", `translate(0,${innerHeight})`)
-        .call(d3.axisBottom(x));
-      g.append("g").call(d3.axisLeft(y));
-    } else {
-      // Grouped bar chart for multiple measures
-      const categories = data.map((d) => d.category || d.label || "");
-      const x0 = d3
-        .scaleBand()
-        .domain(categories)
-        .range([0, innerWidth])
-        .padding(0.1);
-      const x1 = d3
-        .scaleBand()
-        .domain(keys)
-        .range([0, x0.bandwidth()])
-        .padding(0.05);
-      // find max across all series
-      const maxGroup =
-        d3.max(data, (d) => d3.max(keys, (key) => Number(d[key]) || 0)) || 0;
-      const y = d3
-        .scaleLinear()
-        .domain([0, maxGroup])
-        .nice()
-        .range([innerHeight, 0]);
-      const color = d3.scaleOrdinal(d3.schemeCategory10).domain(keys);
-      const g = svg
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-      // groups
-      const slice = g
-        .selectAll("g.slice")
-        .data(data)
-        .enter()
-        .append("g")
-        .attr("class", "slice")
-        .attr("transform", (d) => `translate(${x0(d.category)},0)`);
-      slice
-        .selectAll("rect")
-        .data((d) => keys.map((key) => ({ key, value: Number(d[key]) || 0 })))
-        .enter()
-        .append("rect")
-        .attr("x", (d) => x1(d.key) || 0)
-        .attr("y", (d) => y(d.value))
-        .attr("width", x1.bandwidth())
-        .attr("height", (d) => Math.max(0, innerHeight - y(d.value)))
-        .attr("fill", (d) => color(d.key));
-      // Add axes
-      g.append("g")
-        .attr("transform", `translate(0,${innerHeight})`)
-        .call(d3.axisBottom(x0));
-      g.append("g").call(d3.axisLeft(y));
-    }
+    };
+  }, [data, width, height, margin]);
 
-    // Add title
-    if (config.title) {
-      svg
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", margin.top / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "16px")
-        .style("font-weight", "bold")
-        .text(config.title);
-    }
-  }, [config, data]);
-
-  return null;
+  return (
+    <div>
+      <h2>D3 Bar Chart</h2>
+      <div ref={chartContainerRef}></div>
+    </div>
+  );
 };

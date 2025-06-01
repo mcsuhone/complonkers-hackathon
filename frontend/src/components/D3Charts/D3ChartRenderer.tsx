@@ -1,23 +1,37 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BarChart } from "./BarChart";
-import { LineChart } from "./LineChart";
-import { PieChart } from "./PieChart";
-import { ScatterPlot } from "./ScatterPlot";
-import { NetworkChart } from "./NetworkChart";
-import { ChoroplethChart } from "./ChoroplethChart";
-import { generateMockData, parseChartXML } from "./utils";
-import type { D3ChartRendererProps, ChartConfig } from "./types";
+import type { D3ChartRendererProps } from "./types";
+import type { BarChartData } from "./BarChart";
+
+interface ChartConfig {
+  id: string;
+  chartType: string;
+  title: string;
+  subtitle: string;
+  dimensions: { width: number; height: number; responsive: boolean };
+  margin: { top: number; right: number; bottom: number; left: number };
+  axes: {
+    x: { label: string; scale: string; gridLines: boolean };
+    y: { label: string; scale: string; gridLines: boolean };
+  };
+  fields: Array<{
+    name: string;
+    role: string;
+    dataType: string;
+    title: string;
+  }>;
+  colorScheme: string;
+  tooltipEnabled: boolean;
+}
 
 export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
   chartId,
   chartXml,
-  data,
   className = "",
 }) => {
-  const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [config, setConfig] = useState<ChartConfig | null>(null);
-  const [chartData, setChartData] = useState<any>([]);
+  const [chartData, setChartData] = useState<BarChartData[]>([]);
   const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
 
   // Handle responsive sizing
@@ -36,153 +50,124 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
   }, []);
 
   useEffect(() => {
-    // Use provided chartXml or fall back to registry lookup for backwards compatibility
-    let xmlToUse = chartXml;
-    if (!xmlToUse && chartId) {
-      // Import the registry function only if needed for backwards compatibility
-      import("../../data/chartRegistry").then(({ getChartDefinition }) => {
-        const registryXml = getChartDefinition(chartId);
-        if (registryXml) {
-          const parsedConfig = parseChartXML(registryXml);
-          if (parsedConfig) {
-            // Override dimensions with responsive ones
-            parsedConfig.dimensions = {
-              ...parsedConfig.dimensions,
-              ...dimensions,
-            };
-            setConfig(parsedConfig);
-            const finalData =
-              data ||
-              generateMockData(parsedConfig.chartType, parsedConfig.fields);
-            setChartData(finalData);
-          }
+    if (!chartXml) {
+      console.error(`No chart XML provided`);
+      setConfig(null);
+      setChartData([]);
+      return;
+    }
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(chartXml, "text/xml");
+
+    // The chartXml now directly contains the <Chart> element
+    const chartElement = xmlDoc.documentElement;
+
+    if (!chartElement || chartElement.tagName !== "Chart") {
+      console.error("Invalid root element, expected <Chart>");
+      setConfig(null);
+      setChartData([]);
+      return;
+    }
+
+    const chartType = chartElement.getAttribute("type") || "bar";
+    const title = chartElement.getAttribute("title") || "";
+
+    // Parse Data
+    const dataElement = chartElement.querySelector("Data");
+    let rawData: any[] = [];
+    if (dataElement) {
+      Array.from(dataElement.children).forEach((rowElement) => {
+        if (rowElement.tagName === "Row") {
+          const rowData: Record<string, any> = {};
+          Array.from(rowElement.children).forEach((fieldElement) => {
+            if (fieldElement.tagName === "Field") {
+              const name = fieldElement.getAttribute("name");
+              let value: any = fieldElement.getAttribute("value");
+              if (
+                value !== null &&
+                !isNaN(parseFloat(value)) &&
+                isFinite(parseFloat(value))
+              ) {
+                value = parseFloat(value);
+              }
+              if (name) {
+                rowData[name] = value;
+              }
+            }
+          });
+          rawData.push(rowData);
         }
       });
-      return;
     }
 
-    if (!xmlToUse) {
-      console.error(`No chart XML provided and no chartId for registry lookup`);
-      return;
-    }
-
-    // Detect inline DataMapping-based charts (e.g. <DataSource type="inline" ...>)
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlToUse, "text/xml");
-    const inlineSource = xmlDoc.querySelector("DataSource[type='inline']");
-    if (inlineSource) {
-      // Parse ChartConfig section
-      const chartDef = xmlDoc.querySelector("ChartDefinition");
-      const cfg = xmlDoc.querySelector("ChartConfig");
-      if (cfg) {
-        const chartType = cfg.getAttribute("type") || "bar";
-        const title = cfg.getAttribute("title") || "";
-        // Dimensions
-        const dimEl = cfg.querySelector("Dimensions");
-        const width = dimEl
-          ? parseInt(dimEl.getAttribute("width") || "400", 10)
-          : 400;
-        const height = dimEl
-          ? parseInt(dimEl.getAttribute("height") || "300", 10)
-          : 300;
-        // Margins
-        const mEl = cfg.querySelector("Margins");
-        const margin = mEl
-          ? {
-              top: parseInt(mEl.getAttribute("top") || "40", 10),
-              right: parseInt(mEl.getAttribute("right") || "40", 10),
-              bottom: parseInt(mEl.getAttribute("bottom") || "60", 10),
-              left: parseInt(mEl.getAttribute("left") || "60", 10),
-            }
-          : { top: 40, right: 40, bottom: 60, left: 60 };
-        // Axes labels
-        const xEl = cfg.querySelector("XAxis");
-        const yEl = cfg.querySelector("YAxis");
-        const axes = {
-          x: {
-            label: xEl?.getAttribute("title") || "",
-            scale: "linear",
-            gridLines: false,
-          },
-          y: {
-            label: yEl?.getAttribute("title") || "",
-            scale: "linear",
-            gridLines: false,
-          },
-        };
-        // DataMapping for inline data
-        const mappings = Array.from(xmlDoc.querySelectorAll("DataMapping"));
-        const dimMap = mappings.find(
-          (m) => m.getAttribute("role") === "dimension"
-        );
-        const measMaps = mappings.filter(
-          (m) => m.getAttribute("role") === "measure"
-        );
-        const categories = dimMap
-          ? Array.from(dimMap.querySelectorAll("Mapping")).map(
-              (n) => n.textContent || ""
-            )
-          : [];
-        // Build raw data objects
-        const rawData = categories.map((cat, i) => {
-          const obj: Record<string, any> = { category: cat };
-          measMaps.forEach((mm) => {
-            const field = mm.getAttribute("field") || "value";
-            const vals = Array.from(mm.querySelectorAll("Mapping")).map((n) =>
-              parseFloat(n.textContent || "0")
-            );
-            obj[field] = vals[i] || 0;
-          });
-          return obj;
-        });
-        // Build config
-        const customConfig = {
-          id: chartDef?.getAttribute("id") || "",
-          chartType,
-          title,
-          subtitle: "",
-          dimensions: { width, height, responsive: false },
-          margin,
-          axes,
-          fields: measMaps.map((mm) => ({
-            name: mm.getAttribute("field") || "",
-            role: "y",
-            dataType: mm.getAttribute("dataType") || "number",
-            title: mm.getAttribute("field") || "",
-          })),
-          colorScheme:
-            xmlDoc.querySelector("ColorScheme")?.textContent || "category10",
-          tooltipEnabled:
-            xmlDoc.querySelector("Tooltip")?.getAttribute("enabled") !==
-            "false",
-        };
-        // Override with responsive container dims
-        customConfig.dimensions = { ...customConfig.dimensions, ...dimensions };
-        setConfig(customConfig);
-        setChartData(rawData);
-      }
-      return;
-    }
-    // Fallback to generic XML parsing
-    console.log(
-      "D3ChartRenderer: Parsing XML:",
-      xmlToUse.substring(0, 200) + "..."
+    // Dimensions - read directly from Chart attributes, falling back to responsive or default
+    const chartWidth = parseInt(
+      chartElement.getAttribute("width") || dimensions.width.toString(),
+      10
     );
-    const parsedConfig = parseChartXML(xmlToUse);
-    console.log("D3ChartRenderer: Parsed config:", parsedConfig);
-    if (parsedConfig) {
-      // Override dimensions with responsive ones
-      parsedConfig.dimensions = { ...parsedConfig.dimensions, ...dimensions };
-      setConfig(parsedConfig);
-      // Use provided data or generate mock data
-      const finalData =
-        data || generateMockData(parsedConfig.chartType, parsedConfig.fields);
-      console.log("D3ChartRenderer: Final data:", finalData);
-      setChartData(finalData);
-    }
-  }, [chartId, chartXml, data, dimensions]);
+    const chartHeight = parseInt(
+      chartElement.getAttribute("height") || dimensions.height.toString(),
+      10
+    );
 
-  if (!config) {
+    // Margins - using default values as they are not specified in the new simplified XML
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+
+    // Axes labels - now <Axes> is a direct child of <Chart>
+    const axesElement = chartElement.querySelector("Axes");
+    const xEl = axesElement?.querySelector("XAxis");
+    const yEl = axesElement?.querySelector("YAxis");
+
+    const xAxisLabelField = xEl?.getAttribute("label");
+    const yAxisLabelField = yEl?.getAttribute("label");
+
+    let normalizedData: BarChartData[] = [];
+    if (rawData.length > 0 && xAxisLabelField && yAxisLabelField) {
+      normalizedData = rawData.map((row) => ({
+        label: String(row[xAxisLabelField]),
+        value: Number(row[yAxisLabelField]),
+      }));
+    }
+
+    setConfig({
+      id:
+        chartId ||
+        chartElement.getAttribute("id") ||
+        `chart-${Math.random().toString(16).slice(2)}`,
+      chartType,
+      title,
+      subtitle: chartElement.getAttribute("subtitle") || "",
+      dimensions: { width: chartWidth, height: chartHeight, responsive: true },
+      margin,
+      axes: {
+        x: {
+          label: xEl?.getAttribute("label") || "",
+          scale: xEl?.getAttribute("scale") || "linear",
+          gridLines: xEl?.getAttribute("gridLines") === "true",
+        },
+        y: {
+          label: yEl?.getAttribute("label") || "",
+          scale: yEl?.getAttribute("scale") || "linear",
+          gridLines: yEl?.getAttribute("gridLines") === "true",
+        },
+      },
+      fields: Object.keys(rawData[0] || {}).map((key) => ({
+        name: key,
+        role: "",
+        dataType: typeof rawData[0][key] === "number" ? "number" : "string",
+        title: key,
+      })),
+      colorScheme:
+        chartElement.querySelector("ColorScheme")?.textContent || "category10",
+      tooltipEnabled:
+        chartElement.querySelector("Tooltip")?.getAttribute("enabled") !==
+        "false",
+    });
+    setChartData(normalizedData);
+  }, [chartXml, chartId, dimensions]);
+
+  if (!config || chartData.length === 0) {
     return (
       <div
         ref={containerRef}
@@ -191,52 +176,37 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
         <div className="text-center">
           <div className="text-muted-foreground mb-2">⚠️</div>
           <div className="text-sm text-muted-foreground">
-            Invalid chart configuration
+            Invalid chart configuration or no data
           </div>
         </div>
       </div>
     );
   }
 
-  const { width, height } = config.dimensions;
+  const { margin, chartType } = config;
 
   const renderChart = () => {
-    switch (config.chartType) {
+    switch (chartType) {
       case "bar":
-        return <BarChart config={config} data={chartData} svgRef={svgRef} />;
-      case "line":
-      case "area":
-        return <LineChart config={config} data={chartData} svgRef={svgRef} />;
-      case "pie":
-      case "donut":
-        return <PieChart config={config} data={chartData} svgRef={svgRef} />;
-      case "scatter":
-      case "bubble":
-        return <ScatterPlot config={config} data={chartData} svgRef={svgRef} />;
-      case "network":
-        // NetworkChart expects a different data structure with nodes and links
-        const networkData = chartData as any;
         return (
-          <NetworkChart config={config} data={networkData} svgRef={svgRef} />
-        );
-      case "choropleth":
-        return (
-          <ChoroplethChart config={config} data={chartData} svgRef={svgRef} />
+          <BarChart
+            data={chartData}
+            width={config.dimensions.width}
+            height={config.dimensions.height}
+            margin={margin}
+          />
         );
       default:
-        return <BarChart config={config} data={chartData} svgRef={svgRef} />;
+        return (
+          <div className="text-sm text-muted-foreground text-center">
+            Unsupported chart type: {chartType}
+          </div>
+        );
     }
   };
 
   return (
     <div ref={containerRef} className={`w-full ${className}`}>
-      <svg
-        ref={svgRef}
-        width={width}
-        height={height}
-        style={{ maxWidth: "100%", height: "auto" }}
-        className="border border-border rounded"
-      />
       {renderChart()}
     </div>
   );

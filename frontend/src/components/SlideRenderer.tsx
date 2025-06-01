@@ -1,9 +1,8 @@
+import type { TextComponent } from "@/db";
+import { textComponentsService } from "@/db";
+import { cn } from "@/lib/utils";
 import React from "react";
 import { D3ChartRenderer } from "./D3Charts";
-import { chartsService, textComponentsService } from "@/db";
-import { templateData } from "@/data/presentationTemplate";
-import type { Chart, TextComponent } from "@/db";
-import { cn } from "@/lib/utils";
 
 interface SlideRendererProps {
   /** XML string representing the slide content */
@@ -11,6 +10,68 @@ interface SlideRendererProps {
   /** Additional CSS classes */
   className?: string;
 }
+
+const PLACEHOLDER_SLIDE_XML = `<Slide id="Executive Summary">
+    <Title>Executive Summary</Title>
+    <Text tag="p">This section provides a concise overview of the company, its mission, the problem it solves, and its market potential. While specific details such as mission, problem statement, and market potential are typically derived from business strategy documents and external market research, this overview sets the stage for demonstrating the company's current traction and validating its position within its market through quantitative data insights. This investment opportunity focuses on a company with strong potential in a growing market, addressing a critical need with an innovative solution.</Text>
+    <Chart id="annualRevenueBarChart" type="bar" title="Annual Revenue Trend" width="800" height="400">
+      <Axes>
+        <XAxis label="Year" scale="band"/>
+        <YAxis label="Total Revenue" scale="linear"/>
+      </Axes>
+      <Legend show="false"/>
+      <Data>
+        <Row>
+          <Field name="Year" value="2021"/>
+          <Field name="Total Revenue" value="449.46"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2022"/>
+          <Field name="Total Revenue" value="481.45"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2023"/>
+          <Field name="Total Revenue" value="469.58"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2024"/>
+          <Field name="Total Revenue" value="477.53"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2025"/>
+          <Field name="Total Revenue" value="450.58"/>
+        </Row>
+      </Data>
+    </Chart>
+    <Chart id="annualUniqueCustomerActivityBarChart" type="bar" title="Annual Unique Customer Activity" width="800" height="500">
+      <Axes>
+        <XAxis label="Year" scale="band"/>
+        <YAxis label="Number of Unique Customers" scale="linear"/>
+      </Axes>
+      <Data>
+        <Row>
+          <Field name="Year" value="2021"/>
+          <Field name="Number of Unique Customers" value="46"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2022"/>
+          <Field name="Number of Unique Customers" value="46"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2023"/>
+          <Field name="Number of Unique Customers" value="47"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2024"/>
+          <Field name="Number of Unique Customers" value="47"/>
+        </Row>
+        <Row>
+          <Field name="Year" value="2025"/>
+          <Field name="Number of Unique Customers" value="46"/>
+        </Row>
+      </Data>
+    </Chart>
+  </Slide>`;
 
 // Parse layout XML and extract chart/text references
 const parseLayoutXML = (xmlString: string) => {
@@ -48,8 +109,7 @@ const parseTextComponentXML = (xmlString: string) => {
 // Render individual components
 const renderComponent = (
   element: Element,
-  textComponents: Record<string, TextComponent>,
-  charts: Record<string, Chart>
+  textComponents: Record<string, TextComponent>
 ): React.ReactNode => {
   const tagName = element.tagName;
   const classes = element.getAttribute("classes") || "";
@@ -60,7 +120,7 @@ const renderComponent = (
     case "Title": {
       const content = element.textContent?.trim() || "";
       return (
-        <h1 key={id} className={cn("text-gray-900", classes)}>
+        <h1 key={id} className={cn("text-gray-900", classes.toString())}>
           {content}
         </h1>
       );
@@ -80,7 +140,6 @@ const renderComponent = (
         }
       }
       // Create the appropriate HTML element based on tag
-      console.log("classes", classes);
       switch (tag) {
         case "h1":
           return (
@@ -127,62 +186,16 @@ const renderComponent = (
     }
 
     case "Chart": {
-      const chartComponentId =
-        element.getAttribute("chartComponentId") ||
-        element.getAttribute("chartId") ||
-        element.getAttribute("id");
-      const type = element.getAttribute("type") || "bar";
+      // This will be the actual XML of the <Chart> element, including its <Data> children
+      const chartXmlContent = element.outerHTML;
 
-      if (chartComponentId && charts[chartComponentId]) {
-        // Extract dataId from chart XML
-        const chartXmlDoc = parseLayoutXML(charts[chartComponentId].xml);
-        const dataSource = chartXmlDoc?.querySelector("DataSource");
-        const dataId = dataSource?.getAttribute("dataId");
-
-        console.log(`Chart ${chartComponentId}: dataId=${dataId}`);
-
-        // Get data from templateData and ensure it's an array
-        const rawData = dataId
-          ? templateData[dataId as keyof typeof templateData]
-          : undefined;
-        let chartData: any[] | undefined;
-
-        if (Array.isArray(rawData)) {
-          chartData = rawData;
-        } else if (
-          rawData &&
-          typeof rawData === "object" &&
-          "nodes" in rawData
-        ) {
-          // For network data, pass the whole object but D3ChartRenderer will handle it
-          chartData = rawData as any;
-        }
-
-        console.log(`Chart ${chartComponentId}: chartData=`, chartData);
-
-        return (
-          <D3ChartRenderer
-            key={id}
-            chartXml={charts[chartComponentId].xml}
-            data={chartData}
-            className={classes.toString()}
-          />
-        );
-      }
-
-      const contentElem = element.querySelector("Content");
-      const fallbackText = contentElem?.textContent?.trim() || placeholder;
       return (
-        <div
+        <D3ChartRenderer
           key={id}
-          className={`${classes.toString()} flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300`}
-        >
-          <div className="text-center">
-            <div className="text-4xl mb-2">📊</div>
-            <div className="text-sm text-gray-600">{type} Chart</div>
-            <div className="text-xs text-gray-500">{fallbackText}</div>
-          </div>
-        </div>
+          chartXml={chartXmlContent}
+          // data prop is intentionally undefined as D3ChartRenderer will parse it
+          className={classes.toString()}
+        />
       );
     }
 
@@ -210,7 +223,7 @@ const renderComponent = (
       return (
         <div key={id} className={classes.toString()}>
           {children.map((child, index) =>
-            renderComponent(child, textComponents, charts)
+            renderComponent(child, textComponents)
           )}
         </div>
       );
@@ -225,32 +238,32 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   xml,
   className = "",
 }) => {
-  console.log("Debug: SlideRenderer xml:", xml);
+  const finalXml = xml;
 
   // Ensure hooks are always called before any early returns
   const [textComponents, setTextComponents] = React.useState<
     Record<string, TextComponent>
   >({});
-  const [charts, setCharts] = React.useState<Record<string, Chart>>({});
+  // const [charts, setCharts] = React.useState<Record<string, Chart>>({}); // Removed as charts are now inline
 
   // Load text components and charts once
   React.useEffect(() => {
     (async () => {
-      const [allTextComponents, allCharts] = await Promise.all([
+      const [allTextComponents] = await Promise.all([
         textComponentsService.getAll(),
-        chartsService.getAll(),
+        // chartsService.getAll(), // Removed as charts are now inline
       ]);
       setTextComponents(
         allTextComponents.reduce((acc, tc) => ({ ...acc, [tc.id]: tc }), {})
       );
-      setCharts(
-        allCharts.reduce((acc, chart) => ({ ...acc, [chart.id]: chart }), {})
-      );
+      // setCharts(
+      //   allCharts.reduce((acc, chart) => ({ ...acc, [chart.id]: chart }), {})
+      // );
     })();
   }, []);
 
   // Early return if xml not provided
-  if (!xml) {
+  if (!finalXml) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="text-center">
@@ -263,7 +276,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     );
   }
 
-  const xmlDoc = parseLayoutXML(xml);
+  const xmlDoc = parseLayoutXML(finalXml);
   if (!xmlDoc) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
@@ -323,23 +336,23 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             key={el.getAttribute("id") ?? `title-${idx}`}
             className="col-span-2"
           >
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
         {preText.map((el, idx) => (
           <div key={el.getAttribute("id") ?? `pre-${idx}`}>
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
         <div key={firstChart.getAttribute("id") ?? "chart-0"}>
-          {renderComponent(firstChart, textComponents, charts)}
+          {renderComponent(firstChart, textComponents)}
         </div>
         {postText.map((el, idx) => (
           <div
             key={el.getAttribute("id") ?? `post-${idx}`}
             className="col-span-2"
           >
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
       </div>
@@ -371,17 +384,17 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             key={el.getAttribute("id") ?? `title-${idx}`}
             className="col-span-2"
           >
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
         {textBefore.map((el, idx) => (
           <div key={el.getAttribute("id") ?? `tb-${idx}`}>
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
         {chartEls.map((el) => (
           <div key={el.getAttribute("id") ?? `chart-${el.getAttribute("id")}`}>
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
         {textAfter.map((el, idx) => (
@@ -389,7 +402,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
             key={el.getAttribute("id") ?? `ta-${idx}`}
             className="col-span-2"
           >
-            {renderComponent(el, textComponents, charts)}
+            {renderComponent(el, textComponents)}
           </div>
         ))}
       </div>
@@ -404,9 +417,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
         "text-gray-900"
       )}
     >
-      {children.map((child, index) =>
-        renderComponent(child, textComponents, charts)
-      )}
+      {children.map((child, index) => renderComponent(child, textComponents))}
     </div>
   );
 };
