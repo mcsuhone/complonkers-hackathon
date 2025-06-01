@@ -127,7 +127,7 @@ def get_data_analyst_instructions():
     """
 def get_script_instructions():
     
-    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "singleslide_schema.xsd")
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "single_slide_schema.xsd")
 
     SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
 
