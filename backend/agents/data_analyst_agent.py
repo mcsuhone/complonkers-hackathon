@@ -11,11 +11,11 @@ import asyncio
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google.adk.tools import FunctionTool
-from .services.database_service import DatabaseService
+from services.database_service import DatabaseService
 
-from .visualizer import visualizer_tool
+from visualizer import visualizer_tool
 
-from .lib import load_xml_output_schema
+from lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
@@ -66,7 +66,7 @@ async def execute_sql_query(query: str) -> str:
     try:
         # The global db_service instance is used here.
         # async with will call db_service.__aenter__ (connect) and db_service.__aexit__ (close)
-        async with db_service as active_db_service:
+        with db_service as active_db_service:
             active_db_service.cursor.execute(query)
             results = active_db_service.cursor.fetchall()
             # Convert list of DictRow objects to a string for the LLM
@@ -224,35 +224,42 @@ def get_data_analyst_instructions():
 def get_script_instructions():
     
 
-    return 
+    return """
+    You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan will be a **natural language description** outlining the components and content for a presentation. This plan IS ALWAYS considered complete and sufficient in its informational content. Your primary responsibility is to **interpret this textual plan and construct the final valid `slide_schema.xml` string by meticulously and strictly following the described intentions**, execute the specified data operations, and populate the content exactly as guided by the plan.
 
-"""
-    You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan outlines components for a presentation. Your primary responsibilities are to **construct the final valid `slide_schema.xml` string** based on this plan, execute the data operations, and populate the content.
+    The analyst's textual plan will describe:
+    *   The intended `SlideId` for different sections or ideas.
+    *   The desired `ComponentType` (`Text` or `Chart`) for each part of a slide.
+    *   `InstructionsForContent`: Natural language descriptions of what data is needed, what text should be generated, or what a chart should visualize. You MUST carefully interpret these instructions to extract precise details for data fetching/processing (including exact schema names where mentioned), text construction, or chart data preparation to JSON and the visualization goal. Trust the correctness of the information provided within these descriptions.
 
-    The analyst's plan will be a structured text, with component details separated by '---'. Each component plan will specify:
-    *   `SlideId`
-    *   `ComponentType` (`Text` or `Chart`)
-    *   `InstructionsForContent` (details for data fetching/processing using exact schema names, text construction, or chart data prep to JSON and visualization goal)
+    **Your Tools and Their Purpose:**
+    You have the following tools at your disposal to accomplish your tasks:
+    *   `execute_sql_query`: Use this tool to run SQL queries against the database. The analyst's instructions will often specify the exact queries or the data points required, which you'll translate into SQL queries using the schema names mentioned in the plan.
+    *   `CodeInterpreterTool`: Use this tool to execute Python code. This is essential for any data manipulation, calculations, transformations, or formatting (e.g., preparing JSON for charts) that goes beyond simple SQL queries, as guided by the analyst's `InstructionsForContent`.
+    *   `visualizer_tool`: This tool is specifically for generating the XML definition of charts. You will pass it JSON data (prepared by you using the `CodeInterpreterTool` or from `execute_sql_query` and then processed) AND the visualization goal/description for the chart (extracted from the analyst's `InstructionsForContent`). The output of this tool is XML that should be embedded within a `<Chart>` component's `<Content>` tag, typically wrapped in CDATA.
+    *   `FileWritingTool`: Use this tool if you need to write data to a file, though your primary output is the final `slide_schema.xml` string.
 
-    Your tasks:
-    1.  **Parse Analyst's Plan:** Interpret the structured text from `{+analysis_proposals}` to identify each planned component and its details.
-    2.  **Construct SlideDeck XML:** You will build the entire XML structure (`<SlideDeck>`, `<Slide id="...">`, `<Text ...>`, `<Chart ...>`) according to `slide_schema.xsd`.
-    3.  **Execute and Populate Content:** For each component planned by the analyst:
-        *   Create the appropriate XML element (e.g., `<Text tag="p">` or `<Chart type="bar">`). Assign classes or other attributes as appropriate or default.
-        *   Read the `InstructionsForContent`.
-        *   Use your tools (`execute_sql_query`, `CodeInterpreterTool`) to perform the data operations (SQL queries, Python calculations) specified by the analyst, **expecting exact schema names in those instructions.**
+    Your tasks are:
+    1.  **Interpret Analyst's Textual Plan:** Carefully read and understand the natural language plan from `{+analysis_proposals}`. Your goal is to extract the structure of the presentation, the components for each slide, and the specific data and content requirements for each component as described by the analyst.
+    2.  **Construct SlideDeck XML:** Based on your interpretation of the textual plan, you will build the entire XML structure (`<SlideDeck>`, `<Slide id="...">`, `<Text ...>`, `<Chart ...>`) according to `slide_schema.xsd`, ensuring it accurately reflects the analyst's described intentions.
+    3.  **Execute and Populate Content:** For each component you identify from the analyst's textual plan:
+        *   Create the appropriate XML element (e.g., `<Text tag="p">` or `<Chart type="bar">`). Assign classes or other attributes as guided by the plan, or use sensible defaults if not explicitly detailed.
+        *   Carefully analyze the analyst's natural language `InstructionsForContent` for that component and execute them precisely using your tools as appropriate.
+        *   Use your tools (`execute_sql_query`, `CodeInterpreterTool`) to perform the data operations (SQL queries, Python calculations) *exactly* as understood from the analyst's instructions, **paying close attention to any mentioned schema names.** Do not infer, alter, or question the core requirements described.
         *   **For `Text` components:**
-            *   Generate the final text string as per `InstructionsForContent`.
+            *   Generate the final text string by synthesizing the information and directives in the `InstructionsForContent`, potentially using your tools to fetch or calculate data to be included in the text.
             *   Place this text inside the `<Content>` tag of the `<Text>` element you created.
         *   **For `Chart` components:**
-            *   Execute data preparation to **JSON format** as per `InstructionsForContent`.
-            *   Use your `visualizer_tool`, passing it BOTH the prepared JSON data AND the visualization goal/description from `InstructionsForContent`.
+            *   Prepare data in **JSON format** as guided by the `InstructionsForContent`, using `execute_sql_query` to fetch raw data and `CodeInterpreterTool` for transformation and JSON structuring.
+            *   Use your `visualizer_tool`, passing it BOTH the prepared JSON data AND the visualization goal/description extracted from the `InstructionsForContent`.
             *   Ensure the `visualizer_tool`'s output XML (which should include the data) is complete. Place this entire CDATA-wrapped XML output from `visualizer_tool` inside the `<Content>` tag of the `<Chart>` element you created.
-        *   Add the fully formed component XML to the correct `<Slide id="...">` within your overall `<SlideDeck>` structure.
-    4.  **Error Handling:** If any step in processing a specific planned component fails (e.g., data generation error, `visualizer_tool` error), that entire component (the one you were trying to build) MUST BE OMITTED from the final `slide_schema.xml`. Continue to process other planned components.
-    5.  **Output Requirement:** Your SOLE and FINAL output MUST be a single, valid XML string, representing the complete `slide_schema.xml`. This XML must contain all successfully processed components, correctly structured according to `slide_schema.xsd`.
-
-    """
+        *   Add the fully formed component XML to the correct `<Slide id="...">` (as interpreted from the plan) within your overall `<SlideDeck>` structure.
+    4.  **Error Handling for Individual Components:** If any step in processing a *specific component described in the plan* fails (e.g., data generation error from a tool, `visualizer_tool` error, or ambiguity in interpretation that cannot be resolved), that entire component MUST BE OMITTED from the final `slide_schema.xml`. Log the specific error if possible and continue to process other described components. The failure of one component does not invalidate the overall presentation goal.
+    5.  **Output Requirement:** Your SOLE and FINAL output MUST be a single, valid XML string, representing the complete `slide_schema.xml`. This XML must contain all successfully processed components, correctly structured according to `slide_schema.xsd` and your interpretation of the analyst's textual plan.
+    6.  If the `InstructionsForContent` for a component, as interpreted, lead to an issue where data cannot be retrieved or processed, this is an issue with that component's execution. Omit that component as per instruction #4.
+    7.  Ensure that the data parts of the output are in a format readable by D3.js, as would be prepared by following the analyst's JSON preparation guidance.
+  
+      """
 
 def get_analyst_agent():
     # Define how agents should process and pass data
@@ -289,7 +296,7 @@ def get_sequential_agent():
 ########################################################
 
 if __name__ == "__main__":
-    os.environ["GOOGLE_API_KEY"] = "AIzaSyClj9HUm6RcQcmMMSWQJ7vlFtilljrRUxw"
+    os.environ["GOOGLE_API_KEY"] = "AIzaSyDQ3Jc_1TX3v84CVVkK9QeNF-nE_tKzFYM"
     os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
 
     seq_agent = get_sequential_agent()
@@ -351,7 +358,7 @@ if __name__ == "__main__":
     
     
     
-    xml_file = open('backend/agents/temp copy.xml', 'r').read()
+    xml_file = open('backend/agents/test.xml', 'r').read()
     
     asyncio.run(run_analysis_pipeline(xml_file))
 
