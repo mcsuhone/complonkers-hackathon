@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.complonkers-hackathon/slidedeck"
+           xmlns="http://www.complonkers-hackathon/slidedeck"
+           elementFormDefault="qualified">
+
+  <!-- Root element for a slide deck -->
+  <xs:element name="SlideDeck" type="SlideDeckType"/>
+
+  <!-- A deck contains multiple slides -->
+  <xs:complexType name="SlideDeckType">
+    <xs:sequence>
+      <xs:element name="Slide" type="SlideType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Definition of a single slide -->
+  <xs:complexType name="SlideType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Text" type="TextType"/>
+        <xs:element name="Image" type="ImageType"/>
+        <xs:element name="Chart" type="ChartType"/>
+        <xs:element name="List" type="ListType"/>
+        <xs:element name="Container" type="ContainerType"/>
+      </xs:choice>
+    </xs:sequence>
+    <!-- The slide identifier from input -->
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="classes" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- Base component with shared attributes -->
+  <xs:complexType name="BaseComponentType">
+    <xs:attribute name="id" type="xs:string" use="optional"/>
+    <xs:attribute name="placeholder" type="xs:string" use="optional"/>
+    <xs:attribute name="classes" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>Space-separated list of Tailwind CSS classes for styling and positioning.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Text element with tag type (e.g., h1, p) -->
+  <xs:simpleType name="TextTagType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="h1"/>
+      <xs:enumeration value="h2"/>
+      <xs:enumeration value="h3"/>
+      <xs:enumeration value="p"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="TextType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:element name="Content" type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="tag" type="TextTagType" use="optional" default="p"/>
+        <xs:attribute name="textComponentId" type="xs:string" use="optional">
+          <xs:annotation>
+            <xs:documentation>Reference ID to a text component definition. The text renderer will use this ID to fetch the corresponding text content and styling from the text component registry/store.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Image element for placeholders; actual src/alt filled by content agent -->
+  <xs:complexType name="ImageType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:element name="Content" type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="alt" type="xs:string" use="optional"/>
+        <xs:attribute name="width" type="xs:string" use="optional"/>
+        <xs:attribute name="height" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:simpleType name="ChartKindType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="bar"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ChartType: D3.js XML Chart Usage -->
+  <xs:complexType name="ChartType">
+  <xs:sequence>
+    <xs:element name="Data" type="ChartDataType"/>
+  </xs:sequence>
+  <xs:attribute name="type" type="ChartKindType" use="required"/>
+  <xs:attribute name="classes" type="xs:string" use="optional"/>
+</xs:complexType>
+
+<!-- Chart data container type -->
+<xs:complexType name="ChartDataType">
+  <xs:sequence>
+    <xs:element name="Row" type="ChartRowType" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+
+<!-- Chart row type containing multiple fields -->
+<xs:complexType name="ChartRowType">
+  <xs:sequence>
+    <xs:element name="Field" type="ChartFieldType" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+
+<!-- Chart field type with name and value attributes -->
+<xs:complexType name="ChartFieldType">
+  <xs:attribute name="name" type="xs:string" use="required"/>
+  <xs:attribute name="value" type="xs:string" use="required"/>
+</xs:complexType>
+
+  <!-- List element with ordered/unordered flag -->
+  <xs:complexType name="ListType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:element name="Content" type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="mode" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="content"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Generic container to group other components -->
+  <xs:complexType name="ContainerType">
+    <xs:complexContent>
+      <xs:extension base="BaseComponentType">
+        <xs:sequence>
+          <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Text" type="TextType"/>
+            <xs:element name="Image" type="ImageType"/>
+            <xs:element name="Chart" type="ChartType"/>
+            <xs:element name="List" type="ListType"/>
+            <xs:element name="Container" type="ContainerType"/>
+          </xs:choice>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  
+  <xs:simpleType name="FieldType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="number"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FieldRoleEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="dimension"/>
+      <xs:enumeration value="measure"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- inlined chart definitions end -->
+
+</xs:schema>
