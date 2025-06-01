@@ -95,7 +95,7 @@ def get_data_analyst_instructions():
     with open(schema, 'r') as file:
         schemas = file.read()
 
-    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "single_slide_schema.xsd")
 
     SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
 
@@ -127,6 +127,9 @@ def get_data_analyst_instructions():
     """
 def get_script_instructions():
     
+    SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "singleslide_schema.xsd")
+
+    SCHEMA = load_xml_output_schema(SCHEMA_RELATIVE_PATH)
 
     return """
     You are a script writer. You will receive a textual plan from the analyst_agent (via `{+analysis_proposals}`). This plan will be a **natural language description** outlining the components and content for **a single presentation slide**. This plan IS ALWAYS considered complete and sufficient in its informational content. Your primary responsibility is to **interpret this textual plan and construct the XML string for a single `<Slide>` element and its contents by meticulously and strictly following the described intentions**, execute the specified data operations, and populate the content exactly as guided by the plan.
@@ -134,10 +137,8 @@ def get_script_instructions():
     The analyst's textual plan will describe:
     *   The intended `SlideId` for the slide.
     *   The desired `ComponentType` (`Text` or `Chart`) for each part of the slide.
-    *   `InstructionsForContent`: Natural language descriptions of what data is needed, what text should be generated, or what a chart should visualize. You MUST carefully interpret these instructions to extract precise details for data fetching/processing (including exact schema names where mentioned), text construction, or chart data preparation to JSON and the visualization goal. Trust the correctness of the information provided within these descriptions.
-    *   If the desired component type is a chart, return a Chart component composed of a Data component, composed of Field components, whose values and names are the data obtained through operations
+    *   `InstructionsForContent`: Natural language descriptions of what data is needed, what text should be generated, or what a chart should visualize. You MUST carefully interpret these instructions to extract precise details for data fetching/processing (including exact schema names where mentioned), text construction, or chart data preparation to JSON and the visualization goal. Trust the correctness of the information provided within these descriptions.  If the desired component type is a chart, return a Chart component composed of a Data component, composed of Field components, whose values and names are the data obtained through operations
      
-  
     **Your Tools and Their Purpose:**
     You have the following tools at your disposal to accomplish your tasks:
     *   `execute_sql_query`: Use this tool to run SQL queries against the database. The analyst's instructions will often specify the exact queries or the data points required, which you'll translate into SQL queries using the schema names mentioned in the plan.
@@ -153,7 +154,7 @@ def get_script_instructions():
     2.  **Build Slide Structure:** Create the `<Slide id="...">` element. The analyst's plan will guide the ID and content for this single slide.
     3.  **Process Each Component:** For each component described by the analyst for the slide:
         *   **For `Text` components:**
-            *   Extract the intended textual content or the instructions to generate it from the analyst's plan.
+        *   Extract the intended textual content or the instructions to generate it from the analyst's plan.
             *   Use `execute_sql_query` or `CodeInterpreterTool` if data needs to be fetched or calculated to be part of the text.
             *   Create a `<Text>` XML element (e.g., `<Text tag="p">`) and place the generated text inside its `<Content>` tag.
             *   If the presentation is about a company, create the text part of the text component to be from someone who belongs to the company.
@@ -176,7 +177,9 @@ def get_script_instructions():
         *   Add the fully formed component XML (`<Text>` or `<Chart>`) into your `<Slide>` XML structure.
     4.  **Final Output:** Ensure your final output is an XML string representing a single, complete `<Slide>` element. This `<Slide>` element and its contents must be structured according to the principles of `slide_schema.xsd` for a slide. It should contain all successfully processed components for that slide. If a component cannot be processed due to an error in its execution or data retrieval as per the plan, it should be omitted from the slide.
 
-    """
+    For a larger reference, here is an xsd file for a single slide:
+    
+    """ + f"{SCHEMA}"
 
 def get_analyst_agent():
     # Define how agents should process and pass data
