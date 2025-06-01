@@ -41,27 +41,42 @@ export function parseSlide(xmlString: string): ParsedSlide[] {
     console.error("Invalid XML: no root element found");
     return [];
   }
+
   const slideElems: Element[] = [];
   const rootName = root.localName;
-  const namespace = root.namespaceURI;
-  // If root is a single Slide, include it
+  // const namespace = root.namespaceURI; // Namespace variable not strictly needed with childNodes iteration
+
   if (rootName === "Slide") {
+    // If the root itself is a <Slide> element
+    slideElems.push(root);
+  } else if (rootName === "SlideDeck") {
     slideElems.push(root);
   } else {
-    // For Presentation or SlideDeck, find child Slide elements
-    if (namespace) {
-      slideElems.push(
-        ...Array.from(xmlDoc.getElementsByTagNameNS(namespace, "Slide"))
-      );
-    }
-    if (slideElems.length === 0) {
-      slideElems.push(...Array.from(xmlDoc.getElementsByTagName("Slide")));
+    // If the root is <SlideDeck>, <Presentation>, or any other wrapper,
+    // find <Slide> elements that are direct children of the root.
+    const childNodes = root.childNodes;
+    for (let i = 0; i < childNodes.length; i++) {
+      const node = childNodes[i];
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        // Check localName against "Slide".
+        // This assumes "Slide" is the consistent localName for slide elements,
+        // regardless of prefixes or default namespaces on parent/child.
+        if (element.localName === "Slide") {
+          slideElems.push(element);
+        }
+      }
     }
   }
+
   if (slideElems.length === 0) {
-    console.error(`Invalid XML: no Slide elements found in root <${rootName}>`);
+    // Updated error message to be more general
+    console.error(
+      `No <Slide> elements found to process directly or as children of root <${rootName}>`
+    );
     return [];
   }
+
   const serializer = new XMLSerializer();
   return slideElems.map((el) => ({
     slideId: el.getAttribute("id") || "",

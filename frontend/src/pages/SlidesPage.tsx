@@ -218,7 +218,7 @@ export const SlidesPage: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Slide panel */}
               <div className="flex-1 overflow-hidden">
-                <div className="aspect-video bg-white rounded-lg overflow-hidden">
+                <div className="bg-white rounded-lg overflow-hidden">
                   {presentationLoading ||
                     (slidesLoading && (
                       <div className="flex items-center justify-center h-full">

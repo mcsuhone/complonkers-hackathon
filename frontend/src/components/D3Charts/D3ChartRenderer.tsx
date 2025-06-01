@@ -4,7 +4,6 @@ import type { D3ChartRendererProps } from "./types";
 import type { BarChartData } from "./BarChart";
 
 interface ChartConfig {
-  id: string;
   chartType: string;
   title: string;
   subtitle: string;
@@ -24,11 +23,39 @@ interface ChartConfig {
   tooltipEnabled: boolean;
 }
 
+// Helper function to parse <Row> and <Field> elements from a <Data> node
+const parseXmlDataRows = (dataElementNode: Element, outputArray: any[]) => {
+  Array.from(dataElementNode.children).forEach((rowElement) => {
+    if (rowElement.tagName === "Row") {
+      const rowData: Record<string, any> = {};
+      Array.from(rowElement.children).forEach((fieldElement) => {
+        if (fieldElement.tagName === "Field") {
+          const name = fieldElement.getAttribute("name");
+          let value: any = fieldElement.getAttribute("value");
+          const parsedFloat = parseFloat(value);
+          if (
+            value !== null &&
+            !isNaN(parsedFloat) &&
+            isFinite(parsedFloat) &&
+            String(parsedFloat) === value
+          ) {
+            value = parsedFloat;
+          }
+          if (name) {
+            rowData[name] = value;
+          }
+        }
+      });
+      outputArray.push(rowData);
+    }
+  });
+};
+
 export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
-  chartId,
   chartXml,
   className = "",
 }) => {
+  console.log("D3ChartRenderer: Received chartXml:", chartXml);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [config, setConfig] = useState<ChartConfig | null>(null);
   const [chartData, setChartData] = useState<BarChartData[]>([]);
@@ -41,6 +68,7 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
         const { width } = containerRef.current.getBoundingClientRect();
         const height = Math.max(300, width * 0.6); // Maintain aspect ratio
         setDimensions({ width: width || 400, height });
+        console.log("D3ChartRenderer: Dimensions updated", { width, height });
       }
     };
 
@@ -50,124 +78,263 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
   }, []);
 
   useEffect(() => {
+    console.log(
+      "D3ChartRenderer: chartXml useEffect triggered. chartXml:",
+      chartXml
+    );
     if (!chartXml) {
-      console.error(`No chart XML provided`);
+      console.error(
+        "D3ChartRenderer: No chart XML provided, clearing config and data."
+      );
       setConfig(null);
       setChartData([]);
       return;
     }
 
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(chartXml, "text/xml");
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(chartXml, "text/xml");
+      console.log("D3ChartRenderer: Parsed xmlDoc:", xmlDoc);
 
-    // The chartXml now directly contains the <Chart> element
-    const chartElement = xmlDoc.documentElement;
+      const chartElement = xmlDoc.documentElement;
+      console.log("D3ChartRenderer: chartElement:", chartElement);
 
-    if (!chartElement || chartElement.tagName !== "Chart") {
-      console.error("Invalid root element, expected <Chart>");
-      setConfig(null);
-      setChartData([]);
-      return;
-    }
+      if (!chartElement || chartElement.tagName !== "Chart") {
+        console.error(
+          "D3ChartRenderer: Invalid root element, expected <Chart>. Actual:",
+          chartElement?.tagName
+        );
+        setConfig(null);
+        setChartData([]);
+        return;
+      }
 
-    const chartType = chartElement.getAttribute("type") || "bar";
-    const title = chartElement.getAttribute("title") || "";
+      const chartType = chartElement.getAttribute("type") || "bar";
+      const title = chartElement.getAttribute("title") || "";
+      console.log("D3ChartRenderer: chartType:", chartType, "title:", title);
 
-    // Parse Data
-    const dataElement = chartElement.querySelector("Data");
-    let rawData: any[] = [];
-    if (dataElement) {
-      Array.from(dataElement.children).forEach((rowElement) => {
-        if (rowElement.tagName === "Row") {
-          const rowData: Record<string, any> = {};
-          Array.from(rowElement.children).forEach((fieldElement) => {
-            if (fieldElement.tagName === "Field") {
-              const name = fieldElement.getAttribute("name");
-              let value: any = fieldElement.getAttribute("value");
-              if (
-                value !== null &&
-                !isNaN(parseFloat(value)) &&
-                isFinite(parseFloat(value))
-              ) {
-                value = parseFloat(value);
+      let rawData: any[] = [];
+      const directDataElement = chartElement.querySelector("Data");
+
+      if (directDataElement) {
+        console.log(
+          "D3ChartRenderer: Found direct <Data> element. Parsing with helper."
+        );
+        parseXmlDataRows(directDataElement, rawData);
+      } else {
+        console.log(
+          "D3ChartRenderer: No direct <Data> element found. Checking <Content>."
+        );
+        const contentElement = chartElement.querySelector("Content");
+        if (contentElement?.textContent) {
+          let contentStr = contentElement.textContent.trim();
+          console.log(
+            "D3ChartRenderer: Text content of <Content>:",
+            contentStr
+          );
+
+          if (
+            contentStr.startsWith("<Data>") &&
+            contentStr.endsWith("</Data>")
+          ) {
+            console.log(
+              "D3ChartRenderer: <Content> contains XML string. Parsing it."
+            );
+            try {
+              const innerParser = new DOMParser();
+              const innerXmlDoc = innerParser.parseFromString(
+                contentStr,
+                "text/xml"
+              );
+              const innerDataElement = innerXmlDoc.documentElement;
+              if (innerDataElement && innerDataElement.tagName === "Data") {
+                parseXmlDataRows(innerDataElement, rawData);
+                console.log(
+                  "D3ChartRenderer: Successfully parsed XML from <Content> via helper."
+                );
+              } else {
+                console.error(
+                  "D3ChartRenderer: Parsed XML from <Content> but root was not <Data>:",
+                  innerDataElement?.tagName
+                );
               }
-              if (name) {
-                rowData[name] = value;
-              }
+            } catch (xmlParseError) {
+              console.error(
+                "D3ChartRenderer: Failed to parse XML string from <Content>:",
+                xmlParseError,
+                "String was:",
+                contentStr
+              );
             }
-          });
-          rawData.push(rowData);
+          } else {
+            console.log(
+              "D3ChartRenderer: <Content> does not appear to be <Data> XML string. Attempting JSON parse."
+            );
+            if (
+              contentStr.startsWith("<![CDATA[") &&
+              contentStr.endsWith("]]>")
+            ) {
+              contentStr = contentStr
+                .substring(9, contentStr.length - 3)
+                .trim();
+              console.log(
+                "D3ChartRenderer: Removed CDATA, attempting JSON parse on:",
+                contentStr
+              );
+            }
+            try {
+              rawData = JSON.parse(contentStr);
+              console.log(
+                "D3ChartRenderer: Successfully parsed JSON from <Content>."
+              );
+            } catch (jsonError) {
+              console.error(
+                "D3ChartRenderer: Failed to parse JSON from <Content> (and not XML string):",
+                jsonError,
+                "Original string from content:",
+                contentElement.textContent.trim()
+              );
+            }
+          }
+        } else {
+          console.log(
+            "D3ChartRenderer: No <Content> element with text found either."
+          );
         }
-      });
-    }
+      }
+      console.log(
+        "D3ChartRenderer: Extracted rawData (before filtering for BarChartData structure):",
+        JSON.parse(JSON.stringify(rawData))
+      );
 
-    // Dimensions - read directly from Chart attributes, falling back to responsive or default
-    const chartWidth = parseInt(
-      chartElement.getAttribute("width") || dimensions.width.toString(),
-      10
-    );
-    const chartHeight = parseInt(
-      chartElement.getAttribute("height") || dimensions.height.toString(),
-      10
-    );
+      // Since normalization is removed, rawData is filtered to fit BarChartData[]
+      let finalChartData: BarChartData[] = [];
+      if (Array.isArray(rawData) && rawData.length > 0) {
+        finalChartData = rawData
+          .filter(
+            (item: any) =>
+              item &&
+              typeof item.label === "string" &&
+              typeof item.value === "number" &&
+              !isNaN(item.value)
+          )
+          .map((item: any) => ({
+            label: item.label as string,
+            value: item.value as number,
+          }));
 
-    // Margins - using default values as they are not specified in the new simplified XML
-    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+        if (finalChartData.length !== rawData.length) {
+          console.warn(
+            "D3ChartRenderer: Some items in rawData did not conform to BarChartData structure ({label: string, value: number}) and were filtered out.",
+            {
+              originalCount: rawData.length,
+              conformingCount: finalChartData.length,
+              originalData: JSON.parse(JSON.stringify(rawData)),
+            }
+          );
+        }
+        console.log(
+          "D3ChartRenderer: Data after filtering for BarChartData structure:",
+          JSON.parse(JSON.stringify(finalChartData))
+        );
+      } else {
+        console.log(
+          "D3ChartRenderer: rawData is empty or not an array, so chartData will be empty."
+        );
+      }
+      setChartData(finalChartData);
 
-    // Axes labels - now <Axes> is a direct child of <Chart>
-    const axesElement = chartElement.querySelector("Axes");
-    const xEl = axesElement?.querySelector("XAxis");
-    const yEl = axesElement?.querySelector("YAxis");
+      const chartWidth = parseInt(
+        chartElement.getAttribute("width") || dimensions.width.toString(),
+        10
+      );
+      const chartHeight = parseInt(
+        chartElement.getAttribute("height") || dimensions.height.toString(),
+        10
+      );
+      const margin = { top: 40, right: 40, bottom: 60, left: 60 };
 
-    const xAxisLabelField = xEl?.getAttribute("label");
-    const yAxisLabelField = yEl?.getAttribute("label");
+      const axesContainerElement = chartElement.querySelector("Axes");
+      const xAxisElement =
+        axesContainerElement?.querySelector('Axis[type="x"]');
+      const yAxisElement =
+        axesContainerElement?.querySelector('Axis[type="y"]');
+      console.log(
+        "D3ChartRenderer: XML xAxisElement:",
+        xAxisElement,
+        "XML yAxisElement:",
+        yAxisElement
+      );
 
-    let normalizedData: BarChartData[] = [];
-    if (rawData.length > 0 && xAxisLabelField && yAxisLabelField) {
-      normalizedData = rawData.map((row) => ({
-        label: String(row[xAxisLabelField]),
-        value: Number(row[yAxisLabelField]),
-      }));
-    }
-
-    setConfig({
-      id:
-        chartId ||
-        chartElement.getAttribute("id") ||
-        `chart-${Math.random().toString(16).slice(2)}`,
-      chartType,
-      title,
-      subtitle: chartElement.getAttribute("subtitle") || "",
-      dimensions: { width: chartWidth, height: chartHeight, responsive: true },
-      margin,
-      axes: {
-        x: {
-          label: xEl?.getAttribute("label") || "",
-          scale: xEl?.getAttribute("scale") || "linear",
-          gridLines: xEl?.getAttribute("gridLines") === "true",
+      const newConfig: ChartConfig = {
+        chartType,
+        title: title || (finalChartData.length > 0 ? "Chart" : "Data Summary"), // Adjusted default title
+        subtitle: chartElement.getAttribute("subtitle") || "",
+        dimensions: {
+          width: chartWidth,
+          height: chartHeight,
+          responsive: true,
         },
-        y: {
-          label: yEl?.getAttribute("label") || "",
-          scale: yEl?.getAttribute("scale") || "linear",
-          gridLines: yEl?.getAttribute("gridLines") === "true",
+        margin,
+        axes: {
+          x: {
+            label: xAxisElement?.getAttribute("label") || "Label",
+            scale: xAxisElement?.getAttribute("scale") || "band",
+            gridLines: xAxisElement?.getAttribute("gridLines") === "true",
+          },
+          y: {
+            label: yAxisElement?.getAttribute("label") || "Value",
+            scale: yAxisElement?.getAttribute("scale") || "linear",
+            gridLines: yAxisElement?.getAttribute("gridLines") === "true",
+          },
         },
-      },
-      fields: Object.keys(rawData[0] || {}).map((key) => ({
-        name: key,
-        role: "",
-        dataType: typeof rawData[0][key] === "number" ? "number" : "string",
-        title: key,
-      })),
-      colorScheme:
-        chartElement.querySelector("ColorScheme")?.textContent || "category10",
-      tooltipEnabled:
-        chartElement.querySelector("Tooltip")?.getAttribute("enabled") !==
-        "false",
-    });
-    setChartData(normalizedData);
-  }, [chartXml, chartId, dimensions]);
+        fields:
+          finalChartData.length > 0 && finalChartData[0]
+            ? Object.keys(finalChartData[0]).map((key) => ({
+                name: key, // Will be 'label', 'value'
+                role:
+                  key === "label"
+                    ? "dimension"
+                    : key === "value"
+                    ? "measure"
+                    : "",
+                dataType:
+                  typeof (finalChartData[0] as any)[key] === "number"
+                    ? "number"
+                    : "string",
+                title: key.charAt(0).toUpperCase() + key.slice(1),
+              }))
+            : [],
+        colorScheme:
+          chartElement.querySelector("ColorScheme")?.textContent ||
+          "category10",
+        tooltipEnabled:
+          chartElement.querySelector("Tooltip")?.getAttribute("enabled") !==
+          "false",
+      };
+      console.log("D3ChartRenderer: Setting newConfig:", newConfig);
+      setConfig(newConfig);
+    } catch (error) {
+      console.error(
+        "D3ChartRenderer: Error parsing chart XML or setting up config:",
+        error
+      );
+      setConfig(null);
+      setChartData([]);
+    }
+  }, [chartXml, dimensions]);
+
+  console.log(
+    "D3ChartRenderer: Current state before render decision - config:",
+    config,
+    "chartData:",
+    chartData
+  );
 
   if (!config || chartData.length === 0) {
+    console.log(
+      "D3ChartRenderer: Rendering 'Invalid chart configuration or no data' message."
+    );
     return (
       <div
         ref={containerRef}
@@ -183,11 +350,21 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
     );
   }
 
-  const { margin, chartType } = config;
+  console.log(
+    "D3ChartRenderer: Proceeding to render chart. Type:",
+    config.chartType
+  );
+  const { margin, chartType: configChartType } = config;
 
   const renderChart = () => {
-    switch (chartType) {
+    switch (configChartType) {
       case "bar":
+        console.log(
+          "D3ChartRenderer: Rendering BarChart with data:",
+          chartData,
+          "config:",
+          config
+        );
         return (
           <BarChart
             data={chartData}
@@ -197,9 +374,13 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
           />
         );
       default:
+        console.warn(
+          "D3ChartRenderer: Unsupported chart type:",
+          configChartType
+        );
         return (
           <div className="text-sm text-muted-foreground text-center">
-            Unsupported chart type: {chartType}
+            Unsupported chart type: {configChartType}
           </div>
         );
     }

@@ -79,6 +79,17 @@ def format_text_to_xml_tool(text_to_format: str) -> str:
     The goal is to create a valid XML representation of a presentation slide based on the input text.
     Ensure all content is properly escaped and the XML is well-formed.
 
+    Please split the text into multi fields to make sense on a slide deck. YOu can also generate bar graphs
+    inside <Chart> tag.
+    For `Chart` components (Bar charts only)
+    <Data>
+        <Row>
+            <Field name="example_name1" value="example_value1"/>
+            <Field name="example_name2" value="example_value2"/>
+        </Row>
+        <!-- Additional Row elements as needed -->
+    </Data>
+
     Slide XML Schema:
     ```xml
     {slide_schema_content}

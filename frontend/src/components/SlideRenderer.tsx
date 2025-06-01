@@ -238,8 +238,6 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   xml,
   className = "",
 }) => {
-  const finalXml = xml;
-
   // Ensure hooks are always called before any early returns
   const [textComponents, setTextComponents] = React.useState<
     Record<string, TextComponent>
@@ -262,8 +260,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     })();
   }, []);
 
+  console.log("xml", xml);
+
   // Early return if xml not provided
-  if (!finalXml) {
+  if (!xml) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="text-center">
@@ -276,7 +276,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     );
   }
 
-  const xmlDoc = parseLayoutXML(finalXml);
+  const xmlDoc = parseLayoutXML(xml);
   if (!xmlDoc) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
