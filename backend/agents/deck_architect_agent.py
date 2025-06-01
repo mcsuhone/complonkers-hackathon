@@ -31,28 +31,31 @@ class Config:
     USER_ID = "test_user_simple"
     SESSION_ID = "test_session_simple_001"
     
-    DB_CONFIG = {
-        "dbname": "chinook",  # Assuming you have a chinook DB for testing
-        "user": "postgres",    # Replace with your actual DB credentials
-        "password": "postgres",  # Replace with your actual DB credentials
-        "host": "localhost",
-        "port": 5432
-    }
-    
     # XML Configuration
     XML_NAMESPACE = {
         "ns": "http://www.complonkers-hackathon/slide_ideas"
     }
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_ideas.xsd")
     
-    # Database Placeholders
-    PLACEHOLDER_DBS = ["your_db_name", "test_db_placeholder"]
+
+async def get_database_schema() -> Dict[str, Any]:
+    """
+    Fetch database schemas.
+        
+    Returns:
+        Dict[str, Any]: Dictionary containing either schemas or error information.
+            Format: {'schemas': Dict[str, Dict] | 'error': str}
+    """
+
+    service = DatabaseService()
+    with service as db:
+        table_schemas = db.get_table_schemas()
+        return {"schemas": table_schemas}
 
 
-
-schema = os.path.join(os.path.dirname(__file__), "chinook.md")
-with open(schema, 'r') as file:
-    schemas = file.read()
+db_schema_tool = FunctionTool(
+    func=get_database_schema
+)
 
 # Agent Prompts
 DECK_ARCHITECT_PROMPT = f"""You are an AI assistant that generates business presentation slide outlines.
@@ -60,13 +63,10 @@ DECK_ARCHITECT_PROMPT = f"""You are an AI assistant that generates business pres
 Your primary inputs are:
 1.  `goal`: The overall objective of the presentation.
 2.  `context`: The audience and setting for the presentation.
-3.  `db_config` (optional): A dictionary containing database connection details (`dbname`, `user`, `password`, `host`, `port`).
 
 Your process is as follows:
 
-1.  **Analyze Database Schema (if `db_config` is provided and not a placeholder):**
-   HERE IS THE DATABASE SCHEMA:
-{schemas}
+1.  **Analyze Database Schema using the provided schema tool:**
     **Internally summarize these raw schemas in natural language for your own understanding.** Do NOT output this internal summary. This summary should describe the likely purpose of each table and its key columns based on their names and structure.
 
 2.  **Generate Slide Outline as XML:**
@@ -85,7 +85,7 @@ deck_architect_agent = LlmAgent(
     name="SimpleDeckArchitectAgent",
     model=Config.MODEL_NAME,
     instruction=DECK_ARCHITECT_PROMPT,
-    tools=[],
+    tools=[db_schema_tool],
     output_key="simple_deck_slides_xml"
 )
 
@@ -119,8 +119,6 @@ async def run_architect_agent(initial_state: Dict[str, Any]) -> Optional[str]:
         Exception: If there's an error during the agent execution.
     """
     try:
-        initial_state["db_config"] = Config.DB_CONFIG
-
         session_service = InMemorySessionService()
         session = await session_service.create_session(
             app_name=Config.APP_NAME, 

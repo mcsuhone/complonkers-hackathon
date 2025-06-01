@@ -19,16 +19,6 @@ from .lib import load_xml_output_schema
 from crewai_tools import FileReadTool, DirectoryReadTool, FileWriterTool, CodeInterpreterTool
 from google.adk.tools.crewai_tool import CrewaiTool
 
-# Database connection parameters
-DB_PARAMS = {
-    'dbname': 'chinook',
-    'user': 'postgres',
-    'password': 'postgres',
-    'host': 'localhost', # Assuming your Docker DB is running on localhost
-    'port': 5432
-}
-
-
 # --- Step 1: Set up environment variables (Replace with your actual values) ---
 # Ensure you have authenticated with `gcloud auth application-default login`
 # if using Vertex AI. If using Google AI Studio API key, set GOOGLE_API_KEY.
@@ -62,7 +52,7 @@ async def execute_sql_query(query: str) -> str:
     Returns:
         A string representation of the query results or an error message.
     """
-    db_service = DatabaseService(DB_PARAMS)
+    db_service = DatabaseService()
     try:
         # The global db_service instance is used here.
         # async with will call db_service.__aenter__ (connect) and db_service.__aexit__ (close)
@@ -88,12 +78,15 @@ CodeInterpreterTool = CrewaiTool(
 ########################################################
 
 def get_data_analyst_instructions():
-    # service = DatabaseService(DB_PARAMS)
-    # with service as db:
-    #     schemas = db.get_table_schemas()
-    schema = os.path.join(os.path.dirname(__file__), "chinook.md")
-    with open(schema, 'r') as file:
-        schemas = file.read()
+    service = DatabaseService()
+    try:
+        with service as db:
+            schemas = db.get_table_schemas()
+    except Exception as e:
+        print(f"Error getting table schemas: {e}")
+        schema = os.path.join(os.path.dirname(__file__), "chinook.md")
+        with open(schema, 'r') as file:
+            schemas = file.read()
 
     SCHEMA_RELATIVE_PATH = os.path.join("..", "..", "schemas", "slide_schema.xsd")
 

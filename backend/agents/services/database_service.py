@@ -1,9 +1,10 @@
 import psycopg2
 import psycopg2.extras
+from backend.config.settings import DB_CONFIG
 
 class DatabaseService:
-    def __init__(self, db_config: dict):
-        self.db_config = db_config
+    def __init__(self):
+        self.db_config = DB_CONFIG
         self.connection = None
         self.cursor = None
 
@@ -37,6 +38,9 @@ class DatabaseService:
         Retrieves the schema (column names and types) for all tables in the public schema.
         """
         if not self.cursor:
+            schema = os.path.join(os.path.dirname(__file__), "chinook.md")
+            with open(schema, 'r') as file:
+                return file.read()
             # Attempt to connect if not connected, useful for standalone calls
             # or if the service is used in a way where connect isn't explicitly called first.
             # However, for agents, explicit connect/close is better.
