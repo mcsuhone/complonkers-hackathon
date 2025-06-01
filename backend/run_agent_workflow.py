@@ -87,26 +87,18 @@ Customer Acquisition Cost: $240</Content>
           <Row>
             <Field name="quarter" value="Q1 2024"/>
             <Field name="revenue" value="1250000"/>
-            <Field name="expenses" value="800000"/>
-            <Field name="profit" value="450000"/>
           </Row>
           <Row>
             <Field name="quarter" value="Q2 2024"/>
             <Field name="revenue" value="1450000"/>
-            <Field name="expenses" value="900000"/>
-            <Field name="profit" value="550000"/>
           </Row>
           <Row>
             <Field name="quarter" value="Q3 2024"/>
             <Field name="revenue" value="1680000"/>
-            <Field name="expenses" value="950000"/>
-            <Field name="profit" value="730000"/>
           </Row>
           <Row>
             <Field name="quarter" value="Q4 2024"/>
             <Field name="revenue" value="1920000"/>
-            <Field name="expenses" value="1100000"/>
-            <Field name="profit" value="820000"/>
           </Row>
         </Data>
       </Chart>
@@ -203,8 +195,10 @@ async def _run_agent_workflow(
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
             
-            if np.random.rand() < 0.7:
-                id = slide_idea.get('id')
+            if True:
+                print(f"Using placeholder slide for {slide_idea}")
+                id = slide_idea.get('SlideId')
+                print(f"Placeholder slide for {id}")
                 slide_result = placeholder_slop(id)
             else:
                 analyst_agent = get_sequential_agent()
