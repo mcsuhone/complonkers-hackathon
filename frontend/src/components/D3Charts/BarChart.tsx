@@ -22,6 +22,18 @@ export const BarChart: React.FC<BarChartProps> = ({
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
 
   console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
+  console.log("data", data);
 
   useEffect(() => {
     if (!chartContainerRef.current) {

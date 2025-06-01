@@ -209,19 +209,22 @@ export const D3ChartRenderer: React.FC<D3ChartRendererProps> = ({
 
       // Since normalization is removed, rawData is filtered to fit BarChartData[]
       let finalChartData: BarChartData[] = [];
+      console.log("D3ChartRenderer: rawData:", rawData);
       if (Array.isArray(rawData) && rawData.length > 0) {
-        finalChartData = rawData
-          .filter(
-            (item: any) =>
-              item &&
-              typeof item.label === "string" &&
-              typeof item.value === "number" &&
-              !isNaN(item.value)
-          )
-          .map((item: any) => ({
-            label: item.label as string,
-            value: item.value as number,
-          }));
+        console.log("D3ChartRenderer: rawData:", rawData);
+        finalChartData = rawData.map((item: any) => {
+          const itemKeys = Object.keys(item);
+          if (itemKeys.length >= 2) {
+            return {
+              label: String(item[itemKeys[0]]),
+              value: Number(item[itemKeys[1]]),
+            };
+          }
+          return {
+            label: "",
+            value: 0,
+          };
+        });
 
         if (finalChartData.length !== rawData.length) {
           console.warn(

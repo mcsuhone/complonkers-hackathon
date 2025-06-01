@@ -6,6 +6,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.genai import types as genai_types
 from google.adk.agents import BaseAgent
+from redis_utils.redis_stream import publish_message
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ async def run_ai_agent(
     final_response_to_return = None
     async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=initial_message):
         print('print1', event)
+        await publish_message(job_id=subject_id, message=str(event))
         if event.is_final_response():
             if event.content and event.content.parts:
                 final_response_to_return = event.content.parts[0].text
