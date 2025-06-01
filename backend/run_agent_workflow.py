@@ -13,6 +13,7 @@ from agents.interpreter_agent import job_interpreter_agent
 from agents.deck_architect_agent import deck_architect_agent
 from json import JSONDecodeError
 from lxml import etree
+from agents.data_analyst_agent20 import root_agent as data_analyst_agent20
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -194,24 +195,20 @@ async def _run_agent_workflow(
             
             analyst_message = etree.tostring(slide_idea, encoding='unicode', pretty_print=True)
             slide_app = "ai_slop"
-            
-            if True:
-                print(f"Using placeholder slide for {slide_idea}")
-                id = slide_idea.get('SlideId')
-                print(f"Placeholder slide for {id}")
-                slide_result = placeholder_slop(id)
-            else:
-                analyst_agent = get_sequential_agent()
-                slide_result = await run_ai_agent(
-                    analyst_agent,  # Reusing interpreter agent for simplicity
-                    subject_id=subject_id,
-                    initial_state={"slide_xml": analyst_message},
-                    message_parts=[analyst_message],
-                    app_name=slide_app,
-                    output_key="script_output")
-                if slide_result is None:
-                    logger.error(f"No result from agent {analyst_agent.name} for slide idea in {subject_id}")
-                    continue
+            analyst_agent = data_analyst_agent20
+            slide_result = await run_ai_agent(
+                analyst_agent,  # Using the new data_analyst_agent20
+                subject_id=subject_id,
+                initial_state={"slide_xml": analyst_message},
+                message_parts=[analyst_message],
+                app_name=slide_app,
+                output_key="script_output")
+            print(f"-----------------------\n")
+            print(f"Slide result: {slide_result}")
+            print(f"-----------------------\n")
+            if slide_result is None:
+                logger.error(f"No result from agent {analyst_agent.name} for slide idea in {subject_id}")
+                continue
             logger.info(f"Slide result: {slide_result}")
             # Publish each slide result
             await publish_message(subject_id, slide_result)
